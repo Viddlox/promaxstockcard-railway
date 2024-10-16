@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UoM {
+  PCS
+  PACK
+  UNIT
+}
+
+enum PaymentMethod {
+  COD
+  TRANSFER
+}
+
+model Products {
+  productId String  @id
+  name      String
+  basePrice Decimal
+  quantity  Int
+  bom       Json?
+
+  orders Orders[]
+}
+
+model Inventory {
+  partId       String  @id
+  partName     String
+  partPrice    Decimal
+  partQuantity Int
+  partUoM      UoM
+}
+
+model Users {
+  userId   String @id
+  username String
+  password String
+  role     String
+
+  orders Orders[]
+}
+
+model Customers {
+  customerId  String @id
+  companyName String
+  address     String
+  phoneNumber String
+  ssmNumber   String
+  postCode    String
+  email       String
+
+  orders Orders[]
+}
+
+model Orders {
+  orderId       Int           @id @default(autoincrement())
+  productId     String
+  customerId    String
+  agentId       String
+  paymentMethod PaymentMethod
+  modifications Json
+
+  product  Products  @relation(fields: [productId], references: [productId], onDelete: Cascade)
+  customer Customers @relation(fields: [customerId], references: [customerId])
+  agent    Users     @relation(fields: [agentId], references: [userId])
+
+  invoices Invoices[]
+}
+
+model Invoices {
+  invoiceId    Int      @id @default(autoincrement())
+  orderId      Int
+  totalAmount  Decimal
+  customerData Json
+  orderSummary Json
+  timestamp    DateTime @default(now())
+
+  orders Orders @relation(fields: [orderId], references: [orderId])
+}
+
+model SalesSummary {
+  salesSummaryId   Int      @id @default(autoincrement())
+  totalValue       Decimal
+  changePercentage Float
+  date             DateTime
+}
+
+model SalesByProduct {
+  salesByProductId Int      @id @default(autoincrement())
+  productId        String
+  value            Decimal
+  changePercentage Float
+  date             DateTime
+}
+
+model InventorySummary {
+  inventorySummaryId Int      @id @default(autoincrement())
+  totalAmount        Int
+  changePercentage   Float
+  date               DateTime
+}

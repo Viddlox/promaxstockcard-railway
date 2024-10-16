@@ -1,0 +1,92 @@
+[
+  {
+    "invoiceId": 1,
+    "orderId": 1,
+    "totalAmount": 625,
+    "customerData": {
+      "customerId": "300-A0017",
+      "companyName": "ADOS CCTV WHOLESALE SDN BHD",
+      "address": "NO. 98, JALAN PUTERI 5/5, BANDAR PUTERI PUCHONG, 47100 PUCHONG, SELANGOR.",
+      "phoneNumber": "01123456789",
+      "ssmNumber": "1184624-P",
+      "postCode": "47100",
+      "email": "info@adoscctv.com"
+    },
+    "orderSummary": {
+      "productId": "D712-MDL",
+      "customerId": "300-A0017",
+      "agentName": "Michael Cheng",
+      "paymentMethod": "COD",
+      "modifications": null
+    }
+  },
+  {
+    "invoiceId": 2,
+    "orderId": 2,
+    "totalAmount": 1125,
+    "customerData": {
+      "customerId": "300-A0017",
+      "companyName": "ADOS CCTV WHOLESALE SDN BHD",
+      "address": "NO. 98, JALAN PUTERI 5/5, BANDAR PUTERI PUCHONG, 47100 PUCHONG, SELANGOR.",
+      "phoneNumber": "01123456789",
+      "ssmNumber": "1184624-P",
+      "postCode": "47100",
+      "email": "info@adoscctv.com"
+    },
+    "orderSummary": {
+      "productId": "D712-MDL",
+      "customerId": "Ethan Loh",
+      "agentName": "Agent B",
+      "paymentMethod": "TRANSFER",
+      "modifications": [
+        {
+          "partId": "#16",
+          "quantity": 1,
+          "modificationType": "remove"
+        },
+        {
+          "partId": "#21",
+          "quantity": 10,
+          "modificationType": "add"
+        }
+      ]
+    }
+  },
+  {
+    "invoiceId": 3,
+    "orderId": 3,
+    "totalAmount": 1175,
+    "customerData": {
+      "customerId": "300-A0018",
+      "companyName": "PROMAX AUTOMATIONS SDN BHD",
+      "address": "NO. 23, JALAN USAHAWAN 5, SETAPAK, 53300 KUALA LUMPUR, MALAYSIA.",
+      "phoneNumber": "01234567890",
+      "ssmNumber": "1145234-P",
+      "postCode": "53300",
+      "email": "contact@promaxauto.com"
+    },
+    "orderSummary": {
+      "productId": "C",
+      "customerId": "300-A0018",
+      "agentName": "Ethan Loh",
+      "paymentMethod": "Card",
+      "modifications": [
+        {
+          "partId": "#16",
+          "quantity": 1,
+          "modificationType": "add"
+        },
+        {
+          "partId": "#21",
+          "quantity": 10,
+          "modificationType": "add"
+        },
+        {
+          "productId": "D712-MDL",
+          "quantity": 1,
+          "modificationType": "add"
+        }
+      ]
+    }
+  }
+]

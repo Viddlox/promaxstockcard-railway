@@ -1,0 +1,14 @@
+[
+  {
+    "inventorySummaryId": 1,
+    "totalAmount": 1700,
+    "changePercentage": 0,
+    "date": "2024-09-24T23:59:00Z"
+  },
+  {
+    "inventorySummaryId": 2,
+    "totalAmount": 1632,
+    "changePercentage": -4,
+    "date": "2024-09-25T23:59:00Z"
+  }
+]

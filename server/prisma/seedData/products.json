@@ -1,0 +1,129 @@
+[
+  {
+    "productId": "C",
+    "name": "C-SET",
+    "basePrice": 0,
+    "quantity": 0,
+    "bom": null
+  },
+  {
+    "productId": "D712-MDL",
+    "name": "MODEL-712 - DNOR DC-24V ARM MOTOR",
+    "basePrice": 625,
+    "quantity": 0,
+    "bom": [
+      {
+        "partId": "D712-BOM-BOX-DNOR-NEW",
+        "quantity": 1
+      },
+      {
+        "partId": "D712-OPERATOR-GREY",
+        "quantity": 1
+      },
+      {
+        "partId": "#16",
+        "quantity": 2
+      },
+      {
+        "partId": "#17/4",
+        "quantity": 2
+      },
+      {
+        "partId": "D712-BOM-RB",
+        "quantity": 1
+      },
+      {
+        "partId": "#20",
+        "quantity": 1
+      },
+      {
+        "partId": "#21",
+        "quantity": 2
+      },
+      {
+        "partId": "D712-BOM-SBN",
+        "quantity": 1
+      },
+      {
+        "partId": "TFMR-12V -9V-0V-9V-12V",
+        "quantity": 1
+      },
+      {
+        "partId": "BATTERY-12V 7AH",
+        "quantity": 1
+      },
+      {
+        "partId": "PVC BOX",
+        "quantity": 1
+      },
+      {
+        "partId": "CP-SO-5030I",
+        "quantity": 1
+      },
+      {
+        "partId": "433MHZ-RX-TX(S4)",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "productId": "4STT-MDL",
+    "name": "MODEL-212 - DNOR DC-24V ARM MOTOR",
+    "basePrice": 650,
+    "quantity": 0,
+    "bom": [
+      {
+        "partId": "4STT-BOM-BOX-DNOR",
+        "quantity": 1
+      },
+      {
+        "partId": "4STT-OPERATOR-M:12",
+        "quantity": 1
+      },
+      {
+        "partId": "#16",
+        "quantity": 2
+      },
+      {
+        "partId": "#17/4",
+        "quantity": 2
+      },
+      {
+        "partId": "4STT-BOM-RB-212",
+        "quantity": 1
+      },
+      {
+        "partId": "#20",
+        "quantity": 1
+      },
+      {
+        "partId": "#21",
+        "quantity": 2
+      },
+      {
+        "partId": "4STT-BOM-SBN-212(NEW1)",
+        "quantity": 1
+      },
+      {
+        "partId": "TFMR-12V -9V-0V-9V-12V",
+        "quantity": 1
+      },
+      {
+        "partId": "BATTERY-12V 7AH",
+        "quantity": 1
+      },
+      {
+        "partId": "PVC BOX",
+        "quantity": 1
+      },
+      {
+        "partId": "CP-SO-5030I",
+        "quantity": 1
+      },
+      {
+        "partId": "433MHZ-RX-TX(S4)",
+        "quantity": 1
+      }
+    ]
+  }
+]

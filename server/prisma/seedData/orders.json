@@ -1,0 +1,53 @@
+[
+  {
+    "orderId": 1,
+    "productId": "D712-MDL",
+    "customerId": "300-A0017",
+    "agentId": "1234",
+    "paymentMethod": "COD",
+    "modifications": null
+  },
+  {
+    "orderId": 2,
+    "productId": "D712-MDL",
+    "customerId": "300-A0017",
+    "agentId": "4321",
+    "paymentMethod": "TRANSFER",
+    "modifications": [
+      {
+        "partId": "#16",
+        "quantity": 1,
+        "modificationType": "remove"
+      },
+      {
+        "partId": "#21",
+        "quantity": 10,
+        "modificationType": "add"
+      }
+    ]
+  },
+  {
+    "orderId": 3,
+    "productId": "C",
+    "customerId": "300-A0018",
+    "agentId": "1234",
+    "paymentMethod": "COD",
+    "modifications": [
+		{
+		  "partId": "#16",
+		  "quantity": 1,
+		  "modificationType": "add"
+		},
+		{
+		  "partId": "#21",
+		  "quantity": 10,
+		  "modificationType": "add"
+		},
+		{
+		  "productId": "D712-MDL",
+      "quantity": 1,
+      "modificationType": "add"
+		}
+	  ]
+  }
+]
