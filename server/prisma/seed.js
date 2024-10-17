@@ -55,9 +55,16 @@ const main = async () => {
     "salesByProduct.json",
   ];
 
+  const orderedFileNamesToSeed = [
+    "products.json",
+    "inventory.json",
+    "users.json",
+    "customers.json",
+  ]
+
   await deleteAllData(orderedFileNames);
 
-  for (const fileName of orderedFileNames) {
+  for (const fileName of orderedFileNamesToSeed) {
     const filePath = path.join(dataDirectory, fileName);
     const jsonData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
     const modelName = path.basename(fileName, path.extname(fileName));
