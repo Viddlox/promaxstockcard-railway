@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   isSidebarCollapsed: false,
   isDarkMode: false,
+  searchInput: ""
 };
 
 export const globalSlice = createSlice({
@@ -15,9 +16,12 @@ export const globalSlice = createSlice({
     setIsDarkMode: (state, action) => {
       state.isDarkMode = action.payload;
     },
+    setSearchInput: (state, action) => {
+      state.searchInput = action.payload
+    }
   },
 });
 
-export const { setIsDarkMode, setIsSidebarCollapsed } = globalSlice.actions;
+export const { setIsDarkMode, setIsSidebarCollapsed, setSearchInput } = globalSlice.actions;
 
 export default globalSlice.reducer;

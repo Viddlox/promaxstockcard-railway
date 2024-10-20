@@ -4,118 +4,152 @@
     "partName": "MODEL:712 - D'NOR-BOX",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "UNIT"
+    "partUoM": "UNIT",
+    "createdAt": "2023-10-18T12:00:00Z",
+    "updatedAt": "2023-10-18T12:00:00Z"
   },
   {
     "partId": "D712-OPERATOR-GREY",
     "partName": "MODEL:712 - DNOR SWING / FOLDING GATE OPERATOR",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:01:00Z",
+    "updatedAt": "2023-10-18T12:01:00Z"
   },
   {
     "partId": "#16",
     "partName": "LEFT & RIGHT MOUNTING ARM BRACKET",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:02:00Z",
+    "updatedAt": "2023-10-18T12:02:00Z"
   },
   {
     "partId": "#17/4",
     "partName": "LEFT & RIGHT SWING ARM BRACKET",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:03:00Z",
+    "updatedAt": "2023-10-18T12:03:00Z"
   },
   {
     "partId": "D712-BOM-RB",
     "partName": "MODEL:712 - RELEASE BRACKET",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:04:00Z",
+    "updatedAt": "2023-10-18T12:04:00Z"
   },
   {
     "partId": "#20",
     "partName": "STOPPER BAR",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:05:00Z",
+    "updatedAt": "2023-10-18T12:05:00Z"
   },
   {
     "partId": "#21",
     "partName": "STOPPER RUBBER",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:06:00Z",
+    "updatedAt": "2023-10-18T12:06:00Z"
   },
   {
     "partId": "D712-BOM-SBN",
     "partName": "MODEL:712 - SWING ARM SCREW, BOLTS & NUTS",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PACK"
+    "partUoM": "PACK",
+    "createdAt": "2023-10-18T12:07:00Z",
+    "updatedAt": "2023-10-18T12:07:00Z"
   },
   {
     "partId": "4STT-BOM-BOX-DNOR",
     "partName": "MODEL:212 - DNOR BOX",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:08:00Z",
+    "updatedAt": "2023-10-18T12:08:00Z"
   },
   {
     "partId": "4STT-OPERATOR-M:12",
     "partName": "MODEL:212 - DNOR SWING / FOLDING GATE OPERATOR",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:09:00Z",
+    "updatedAt": "2023-10-18T12:09:00Z"
   },
   {
     "partId": "4STT-BOM-RB-212",
     "partName": "MODEL:212 - RELEASE BRACKET",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:10:00Z",
+    "updatedAt": "2023-10-18T12:10:00Z"
   },
   {
     "partId": "4STT-BOM-SBN-212(NEW1)",
     "partName": "MODEL:212 - SWING ARM SCREW, BOLTS & NUTS",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PACK"
+    "partUoM": "PACK",
+    "createdAt": "2023-10-18T12:11:00Z",
+    "updatedAt": "2023-10-18T12:11:00Z"
   },
   {
     "partId": "TFMR-12V -9V-0V-9V-12V",
     "partName": "12V-9V-0V-9V-12V TRANSFORMER",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:12:00Z",
+    "updatedAt": "2023-10-18T12:12:00Z"
   },
   {
     "partId": "BATTERY-12V 7AH",
     "partName": "12V 7AH BATTERY",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:13:00Z",
+    "updatedAt": "2023-10-18T12:13:00Z"
   },
   {
     "partId": "PVC BOX",
     "partName": "PVC BOX",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:14:00Z",
+    "updatedAt": "2023-10-18T12:14:00Z"
   },
   {
     "partId": "CP-SO-5030I",
     "partName": "SO-5030I DC SWING CONTROL PANEL",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:15:00Z",
+    "updatedAt": "2023-10-18T12:15:00Z"
   },
   {
     "partId": "433MHZ-RX-TX(S4)",
     "partName": "2CH 433 MHZ RECEIVER & 3XREMOTE CONTROL (S4)",
     "partPrice": 50,
     "partQuantity": 100,
-    "partUoM": "PCS"
+    "partUoM": "PCS",
+    "createdAt": "2023-10-18T12:16:00Z",
+    "updatedAt": "2023-10-18T12:16:00Z"
   }
 ]

@@ -24,58 +24,86 @@ enum PaymentMethod {
   TRANSFER
 }
 
+enum OrderType {
+  STOCK
+  SALES
+}
+
 model Products {
-  productId String  @id
-  name      String
-  basePrice Decimal
-  quantity  Int
-  bom       Json?
+  productId   String   @id
+  productName String   @unique
+  basePrice   Decimal
+  quantity    Int
+  bom         Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   orders Orders[]
+
+  @@unique([updatedAt, productId])
 }
 
 model Inventory {
-  partId       String  @id
+  partId       String   @id
   partName     String
   partPrice    Decimal
   partQuantity Int
-  partUoM      UoM
+  partUoM      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  orders Orders[]
+
+  @@unique([updatedAt, partId])
 }
 
 model Users {
-  userId   String @id
-  username String
+  userId   Int    @id @default(autoincrement())
+  username String @unique
   password String
   role     String
 
   orders Orders[]
+
+  @@index([username])
 }
 
 model Customers {
-  customerId  String @id
+  customerId  Int      @id @default(autoincrement())
   companyName String
   address     String
   phoneNumber String
   ssmNumber   String
   postCode    String
   email       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   orders Orders[]
+
+  @@unique([updatedAt, customerId])
 }
 
 model Orders {
-  orderId       Int           @id @default(autoincrement())
-  productId     String
-  customerId    String
-  agentId       String
-  paymentMethod PaymentMethod
+  orderId       Int            @id @default(autoincrement())
+  productId     String?
+  partId        String?
+  customerId    Int
+  agentId       Int
+  orderType     OrderType
+  paymentMethod PaymentMethod?
   modifications Json
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now()) @updatedAt
 
-  product  Products  @relation(fields: [productId], references: [productId], onDelete: Cascade)
-  customer Customers @relation(fields: [customerId], references: [customerId])
-  agent    Users     @relation(fields: [agentId], references: [userId])
+  part     Inventory? @relation(fields: [partId], references: [partId], onDelete: Cascade)
+  product  Products?  @relation(fields: [productId], references: [productId], onDelete: Cascade)
+  customer Customers  @relation(fields: [customerId], references: [customerId], onDelete: Cascade)
+  agent    Users      @relation(fields: [agentId], references: [userId], onDelete: Cascade)
 
   invoices Invoices[]
+
+  @@unique([updatedAt, orderId])
 }
 
 model Invoices {
@@ -85,15 +113,22 @@ model Invoices {
   customerData Json
   orderSummary Json
   timestamp    DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
 
   orders Orders @relation(fields: [orderId], references: [orderId])
+
+  @@unique([updatedAt, invoiceId])
 }
 
 model SalesSummary {
   salesSummaryId   Int      @id @default(autoincrement())
   totalValue       Decimal
   changePercentage Float
-  date             DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+
+  @@unique([updatedAt, salesSummaryId])
 }
 
 model SalesByProduct {
@@ -101,12 +136,18 @@ model SalesByProduct {
   productId        String
   value            Decimal
   changePercentage Float
-  date             DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+
+  @@unique([updatedAt, salesByProductId])
 }
 
 model InventorySummary {
   inventorySummaryId Int      @id @default(autoincrement())
   totalAmount        Int
   changePercentage   Float
-  date               DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now()) @updatedAt
+
+  @@unique([updatedAt, inventorySummaryId])
 }

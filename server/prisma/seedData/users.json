@@ -1,12 +1,12 @@
 [
   {
-    "userId": "1234",
+    "userId": 1,
     "username": "Michael Cheng",
     "password": "12341234",
     "role": "admin"
   },
   {
-    "userId": "4321",
+    "userId": 2,
     "username": "Ethan Loh",
     "password": "12341234",
     "role": "agent"

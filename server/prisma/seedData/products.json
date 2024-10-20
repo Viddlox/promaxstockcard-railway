@@ -1,14 +1,16 @@
 [
   {
     "productId": "C",
-    "name": "C-SET",
+    "productName": "C-SET",
     "basePrice": 0,
     "quantity": 0,
-    "bom": null
+    "bom": null,
+    "createdAt": "2023-10-18T12:00:00Z",
+    "updatedAt": "2023-10-18T12:00:00Z"
   },
   {
     "productId": "D712-MDL",
-    "name": "MODEL-712 - DNOR DC-24V ARM MOTOR",
+    "productName": "MODEL-712 - DNOR DC-24V ARM MOTOR",
     "basePrice": 625,
     "quantity": 0,
     "bom": [
@@ -64,11 +66,13 @@
         "partId": "433MHZ-RX-TX(S4)",
         "quantity": 1
       }
-    ]
+    ],
+    "createdAt": "2023-10-18T12:01:00Z",
+    "updatedAt": "2023-10-18T12:01:00Z"
   },
   {
     "productId": "4STT-MDL",
-    "name": "MODEL-212 - DNOR DC-24V ARM MOTOR",
+    "productName": "MODEL-212 - DNOR DC-24V ARM MOTOR",
     "basePrice": 650,
     "quantity": 0,
     "bom": [
@@ -124,6 +128,8 @@
         "partId": "433MHZ-RX-TX(S4)",
         "quantity": 1
       }
-    ]
+    ],
+    "createdAt": "2023-10-18T12:02:00Z",
+    "updatedAt": "2023-10-18T12:02:00Z"
   }
 ]

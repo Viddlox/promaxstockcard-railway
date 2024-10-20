@@ -11,14 +11,23 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useAppDispatch, useAppSelector } from "@/app/redux";
-import { setIsDarkMode, setIsSidebarCollapsed } from "@/state";
+import {
+  setIsDarkMode,
+  setIsSidebarCollapsed,
+  setSearchInput as setSearchInputGlobal,
+} from "@/state";
+import { useState, useEffect } from "react";
 
 const Navbar = () => {
   const dispatch = useAppDispatch();
+
   const isSidebarCollapsed = useAppSelector(
     (state) => state.global.isSidebarCollapsed
   );
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
+  const searchInputGlobal = useAppSelector((state) => state.global.searchInput);
+
+  const [searchInputLocal, setSearchInputLocal] = useState(searchInputGlobal);
 
   const toggleSidebar = () => {
     dispatch(setIsSidebarCollapsed(!isSidebarCollapsed));
@@ -27,6 +36,22 @@ const Navbar = () => {
   const toggleDarkMode = () => {
     dispatch(setIsDarkMode(!isDarkMode));
   };
+
+  const handleSearch = (e) => {
+    setSearchInputLocal(e.target.value);
+  };
+
+  useEffect(() => {
+    const searchHandler = setTimeout(() => {
+      if (searchInputLocal !== searchInputGlobal) {
+        dispatch(setSearchInputGlobal(searchInputLocal));
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(searchHandler);
+    };
+  }, [searchInputLocal, searchInputGlobal, dispatch]);
 
   return (
     <div className="flex justify-between items-center w-full mb-7">
@@ -40,8 +65,10 @@ const Navbar = () => {
         <div className="relative">
           <input
             type="search"
-            placeholder="Search groups & products"
-            className="pl-10 pr-4 py-2 w-40 md:w-60 lg:w-72 border-2 border-gray-300 bg-white rounded-lg focus:outline-none focus:border-blue-500"
+            onChange={handleSearch}
+            value={searchInputLocal}
+            placeholder="Search inventory & products"
+            className="pl-10 pr-4 py-2 w-72 md:w-72 lg:w-80 border-2 border-gray-300 bg-white rounded-lg focus:outline-none focus:border-blue-500"
           />
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="text-gray-500" size={20} />
@@ -72,7 +99,7 @@ const Navbar = () => {
           </div>
           <hr className="w-0 h-7 border border-solid border-l border-gray-300 mx-3" />
           <div className="flex items-center gap-3 cursor-pointer">
-            <UserCircle size={24}/>
+            <UserCircle size={24} />
             <span className="font-semibold">Ethan Loh</span>
           </div>
         </div>

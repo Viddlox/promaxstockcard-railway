@@ -1,20 +1,6 @@
-import {
-  getTopProducts,
-  getSalesSummary,
-  getInventorySummary,
-} from "./shares.js";
+import { getSalesSummary, getInventorySummary } from "./services.js";
 
-export const handleGetTopProducts = async (req, res) => {
-  try {
-    const data = await getTopProducts();
-
-    res.status(200).json({
-      data,
-    });
-  } catch (e) {
-    res.status(500).json({ message: "Error getting top products" });
-  }
-};
+import { HttpError, formatErrorResponse } from "../../utils/http.js";
 
 export const handleGetSalesSummary = async (req, res) => {
   try {
@@ -24,7 +10,10 @@ export const handleGetSalesSummary = async (req, res) => {
       data,
     });
   } catch (e) {
-    res.status(500).json({ message: "Error getting sales summary" });
+    if (e instanceof HttpError) {
+      res.status(e.status).json(formatErrorResponse(e.message));
+    }
+    res.status(500).json(formatErrorResponse("Error getting sales summary"));
   }
 };
 
@@ -36,6 +25,11 @@ export const handleGetInventorySummary = async (req, res) => {
       data,
     });
   } catch (e) {
-    res.status(500).json({ message: "Error getting inventory summary" });
+    if (e instanceof HttpError) {
+      res.status(e.status).json(formatErrorResponse(e.message));
+    }
+    res
+      .status(500)
+      .json(formatErrorResponse("Error getting inventory summary"));
   }
 };
