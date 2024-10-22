@@ -87,9 +87,9 @@ const Sidebar = () => {
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
-          href={"/sales"}
+          href={"/orders"}
           icon={Receipt}
-          label={"Sales & Orders"}
+          label={"Orders & Invoices"}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink

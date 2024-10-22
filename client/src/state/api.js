@@ -61,10 +61,60 @@ export const api = createApi({
       query: ({ productId, productName, basePrice, quantity = 1, bom }) => ({
         url: "/products/create",
         method: "POST",
-        body: {  productId, productName, basePrice, quantity, bom: JSON.stringify(bom) },
+        body: {
+          productId,
+          productName,
+          basePrice,
+          quantity,
+          bom: JSON.stringify(bom),
+        },
       }),
-      invalidatesTags: ["Products"]
-    })
+      invalidatesTags: ["Products"],
+    }),
+    getOrders: build.query({
+      query: ({ limit = 10, cursor, search }) => ({
+        url: "/orders",
+        params: {
+          limit,
+          cursor: cursor !== null ? cursor : undefined,
+          search: search ? search : undefined,
+        },
+      }),
+      providesTags: ["Orders"],
+    }),
+    createOrder: build.mutation({
+      query: ({
+        orderType,
+        orderItems,
+        agentId,
+        customerId = null,
+        paymentMethod = null,
+        notes = "",
+      }) => ({
+        url: "/orders/create",
+        method: "POST",
+        body: {
+          orderType,
+          orderItems: JSON.stringify(orderItems),
+          agentId,
+          customerId,
+          paymentMethod,
+          notes,
+        },
+      }),
+      invalidatesTags: ["Orders"],
+    }),
+    getCustomers: build.query({
+      query: ({ limit = 10, cursor, search }) => ({
+        url: "/customers",
+        params: {
+          limit,
+          cursor: cursor !== null ? cursor : undefined,
+          search: search ? search : undefined,
+        },
+      }),
+      providesTags: ["Customers"],
+    }),
   }),
 });
 
@@ -74,5 +124,8 @@ export const {
   useDeleteInventoryPartsMutation,
   useGetProductsQuery,
   useDeleteProductsMutation,
-  useCreateProductMutation
+  useCreateProductMutation,
+  useGetOrdersQuery,
+  useCreateOrderMutation,
+  useGetCustomersQuery,
 } = api;

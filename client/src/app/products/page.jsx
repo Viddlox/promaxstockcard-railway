@@ -448,9 +448,6 @@ const Products = () => {
                         onChange={(e) =>
                           handleQuantityChange(index, e.target.value)
                         }
-                        slotProps={{
-                          input: { min: 1 },
-                        }}
                       />
 
                       <Button

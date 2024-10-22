@@ -26,7 +26,13 @@ enum PaymentMethod {
 
 enum OrderType {
   STOCK
-  SALES
+  SALE
+}
+
+enum SetType {
+  ABC
+  A
+  C
 }
 
 model Products {
@@ -37,8 +43,6 @@ model Products {
   bom         Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
-
-  orders Orders[]
 
   @@unique([updatedAt, productId])
 }
@@ -51,8 +55,6 @@ model Inventory {
   partUoM      String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
-
-  orders Orders[]
 
   @@unique([updatedAt, partId])
 }
@@ -86,19 +88,18 @@ model Customers {
 
 model Orders {
   orderId       Int            @id @default(autoincrement())
-  productId     String?
-  partId        String?
-  customerId    Int
-  agentId       Int
   orderType     OrderType
+  orderItems    Json
+  agentId       Int
+  customerId    Int?
   paymentMethod PaymentMethod?
-  modifications Json
+  totalAmount   Decimal?
+  setType       SetType?
+  notes         String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now()) @updatedAt
 
-  part     Inventory? @relation(fields: [partId], references: [partId], onDelete: Cascade)
-  product  Products?  @relation(fields: [productId], references: [productId], onDelete: Cascade)
-  customer Customers  @relation(fields: [customerId], references: [customerId], onDelete: Cascade)
+  customer Customers? @relation(fields: [customerId], references: [customerId], onDelete: Cascade)
   agent    Users      @relation(fields: [agentId], references: [userId], onDelete: Cascade)
 
   invoices Invoices[]
@@ -109,10 +110,8 @@ model Orders {
 model Invoices {
   invoiceId    Int      @id @default(autoincrement())
   orderId      Int
-  totalAmount  Decimal
-  customerData Json
   orderSummary Json
-  timestamp    DateTime @default(now())
+  totalAmount  Decimal
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
 
