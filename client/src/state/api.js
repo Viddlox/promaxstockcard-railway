@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL }),
   reducerPath: "api",
-  tagTypes: ["Inventory"],
+  tagTypes: ["Inventory", "Dashboard", "Products", "Orders", "Customers"],
   endpoints: (build) => ({
     getInventory: build.query({
       query: ({ limit = 10, cursor, search }) => ({
@@ -102,6 +102,17 @@ export const api = createApi({
           notes,
         },
       }),
+      invalidatesTags: ["Orders", "Inventory", "Dashboard"],
+    }),
+    deleteOrders: build.mutation({
+      query: ({ orderIds = [] }) => ({
+        url: "/orders/delete",
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderIds }),
+      }),
       invalidatesTags: ["Orders"],
     }),
     getCustomers: build.query({
@@ -114,6 +125,10 @@ export const api = createApi({
         },
       }),
       providesTags: ["Customers"],
+    }),
+    getDashboardMetrics: build.query({
+      query: () => "/dashboard",
+      providesTags: ["Dashboard"],
     }),
   }),
 });
@@ -128,4 +143,6 @@ export const {
   useGetOrdersQuery,
   useCreateOrderMutation,
   useGetCustomersQuery,
+  useDeleteOrdersMutation,
+  useGetDashboardMetricsQuery,
 } = api;

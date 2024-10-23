@@ -102,7 +102,7 @@ model Orders {
   customer Customers? @relation(fields: [customerId], references: [customerId], onDelete: Cascade)
   agent    Users      @relation(fields: [agentId], references: [userId], onDelete: Cascade)
 
-  invoices Invoices[]
+  invoices Invoices[] @relation("OrderInvoices")
 
   @@unique([updatedAt, orderId])
 }
@@ -115,7 +115,7 @@ model Invoices {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
 
-  orders Orders @relation(fields: [orderId], references: [orderId])
+  orders Orders @relation("OrderInvoices", fields: [orderId], references: [orderId], onDelete: Cascade)
 
   @@unique([updatedAt, invoiceId])
 }
@@ -125,28 +125,24 @@ model SalesSummary {
   totalValue       Decimal
   changePercentage Float
   createdAt        DateTime @default(now())
-  updatedAt        DateTime @default(now()) @updatedAt
 
-  @@unique([updatedAt, salesSummaryId])
+  @@unique([createdAt, salesSummaryId])
 }
 
-model SalesByProduct {
-  salesByProductId Int      @id @default(autoincrement())
-  productId        String
-  value            Decimal
-  changePercentage Float
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @default(now()) @updatedAt
+model TopProductsSummary {
+  topProductsSummaryId Int      @id @default(autoincrement())
+  topProducts          Json
+  createdAt            DateTime @default(now())
 
-  @@unique([updatedAt, salesByProductId])
+  @@unique([createdAt, topProductsSummaryId])
 }
 
 model InventorySummary {
   inventorySummaryId Int      @id @default(autoincrement())
   totalAmount        Int
+  topFewestParts     Json
   changePercentage   Float
   createdAt          DateTime @default(now())
-  updatedAt          DateTime @default(now()) @updatedAt
 
-  @@unique([updatedAt, inventorySummaryId])
+  @@unique([createdAt, inventorySummaryId])
 }

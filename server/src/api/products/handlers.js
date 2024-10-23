@@ -1,9 +1,4 @@
-import {
-  getProducts,
-  postCreateProduct,
-  getTopProducts,
-  deleteProducts,
-} from "./services.js";
+import { getProducts, postCreateProduct, deleteProducts } from "./services.js";
 import {
   HttpError,
   formatErrorResponse,
@@ -66,22 +61,5 @@ export const handleDeleteProducts = async (req, res) => {
       return res.status(e.status).json(formatErrorResponse(e.message));
     }
     return res.status(500).json(formatErrorResponse("Error deleting products"));
-  }
-};
-
-export const handleGetTopProducts = async (req, res) => {
-  try {
-    const data = await getTopProducts();
-
-    res.status(200).json({
-      data,
-    });
-  } catch (e) {
-    if (e instanceof HttpError) {
-      return res.status(e.status).json(formatErrorResponse(e.message));
-    }
-    return res
-      .status(500)
-      .json(formatErrorResponse("Error getting top products"));
   }
 };

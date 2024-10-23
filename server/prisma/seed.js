@@ -52,7 +52,7 @@ const main = async () => {
     "invoices.json",
     "inventorySummary.json",
     "salesSummary.json",
-    "salesByProduct.json",
+    "topProductsSummary.json"
   ];
 
   const orderedFileNamesToSeed = [

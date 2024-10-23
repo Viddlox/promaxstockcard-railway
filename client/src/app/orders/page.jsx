@@ -8,6 +8,7 @@ import {
   useGetInventoryQuery,
   useGetProductsQuery,
   useGetCustomersQuery,
+  useDeleteOrdersMutation,
 } from "@/state/api";
 import { useAppSelector } from "@/app/redux";
 import { Book, Trash, PlusSquare } from "lucide-react";
@@ -30,6 +31,7 @@ import {
 
 const PAGE_SIZE = 10;
 const ORDER_TYPE = ["SALE", "STOCK"];
+const PAYMENT_METHOD = ["COD", "TRANSFER"];
 
 const Orders = () => {
   const [activeTab, setActiveTab] = useState("orders");
@@ -48,9 +50,9 @@ const Orders = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [selectedRowsCount, setSelectedRowsCount] = useState(0);
   const [openModal, setOpenModal] = useState(false);
-  const [orderParts, setOrderParts] = useState([{ partId: null, quantity: 1 }]);
+  const [orderParts, setOrderParts] = useState([{ partId: null, quantity: 0 }]);
   const [orderProducts, setOrderProducts] = useState([
-    { productId: null, quantity: 1, bom: null, productName: "" },
+    { productId: null, quantity: 0, bom: null, productName: "" },
   ]);
   const [customerDetails, setCustomerDetails] = useState({
     address: "",
@@ -59,13 +61,54 @@ const Orders = () => {
     email: "",
     postCode: "",
   });
-
   const [formValues, setFormValues] = useState({
     orderType: "",
     paymentMethod: "",
     customerId: "",
-    note: "",
+    notes: "",
   });
+  const [canSubmitForm, setCanSubmitForm] = useState(false);
+  const prevQuantitiesRef = useRef([]);
+  const [openOrderDetailsModal, setOpenOrderDetailsModal] = useState(false);
+  const [orderDetails, setOrderDetails] = useState([]);
+
+  const [createOrderMutation] = useCreateOrderMutation();
+  const [deleteOrderMutation] = useDeleteOrdersMutation();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const { orderType, paymentMethod, customerId, notes } = formValues;
+    const orderItems =
+      orderType === "SALE" ? [...orderProducts, ...orderParts] : orderParts;
+    await createOrderMutation({
+      orderType,
+      orderItems,
+      agentId: 1,
+      customerId,
+      paymentMethod,
+      notes,
+    });
+    handleCloseModal();
+  };
+
+  useEffect(() => {
+    const { orderType, paymentMethod, customerId } = formValues;
+
+    if (orderType === "SALE") {
+      const hasValidPart = orderParts.every((part) => part.partId);
+      const hasValidProduct = orderProducts.every(
+        (product) => product.productId && product.productName && product.bom
+      );
+      const isFormValid =
+        paymentMethod && customerId && (hasValidPart || hasValidProduct);
+      setCanSubmitForm(isFormValid);
+    } else {
+      const hasValidPart = orderParts.every(
+        (part) => part.partId && Number(part.quantity) !== 0
+      );
+      setCanSubmitForm(hasValidPart && orderParts.length > 0);
+    }
+  }, [formValues, orderParts, orderProducts]);
 
   const handlePartSelection = (index, newItem) => {
     const newArr = [...orderParts];
@@ -79,13 +122,16 @@ const Orders = () => {
   };
 
   const handlePartQuantityChange = (index, quantity) => {
+    if (formValues.orderType === "SALE" && (isNaN(quantity) || quantity < 1)) {
+      return;
+    }
     const newArr = [...orderParts];
     newArr[index].quantity = quantity;
     setOrderParts(newArr);
   };
 
   const handleAddPart = () => {
-    setOrderParts([...orderParts, { partId: null, quantity: 1 }]);
+    setOrderParts([...orderParts, { partId: null, quantity: 0 }]);
   };
 
   const handleRemovePart = (index) => {
@@ -109,13 +155,30 @@ const Orders = () => {
   };
 
   const handleProductQuantityChange = (index, quantity) => {
-    const newArr = [...orderProducts];
-    newArr[index].quantity = quantity;
-    setOrderProducts(newArr);
+    if (!isNaN(quantity) && quantity > 0) {
+      const newArr = [...orderProducts];
+      const product = newArr[index];
+
+      const prevQuantity = prevQuantitiesRef.current[index] || product.quantity;
+      const quantityDifference = quantity - prevQuantity;
+
+      product.quantity = quantity;
+
+      if (product.bom && product.bom.length > 0) {
+        product.bom = product.bom.map((part) => {
+          return {
+            ...part,
+            quantity: part.quantity + quantityDifference,
+          };
+        });
+      }
+      prevQuantitiesRef.current[index] = quantity;
+      setOrderProducts(newArr);
+    }
   };
 
   const handleAddProduct = () => {
-    setOrderProducts([...orderProducts, { productId: null, quantity: 1 }]);
+    setOrderProducts([...orderProducts, { productId: null, quantity: 0 }]);
   };
 
   const handleRemoveProduct = (index) => {
@@ -123,23 +186,22 @@ const Orders = () => {
   };
 
   const handleBomModification = (productIndex, partId, newQuantity) => {
+    if (isNaN(newQuantity) || newQuantity < 0) {
+      return;
+    }
     const newArr = [...orderProducts];
     const product = newArr[productIndex];
 
     const partIndex = product.bom.findIndex((part) => part.partId === partId);
     if (partIndex !== -1) {
-      product.bom[partIndex].quantity = newQuantity;
+      const updatedPart = {
+        ...product.bom[partIndex],
+        quantity: newQuantity,
+      };
+      product.bom = product.bom.map((part, index) =>
+        index === partIndex ? updatedPart : part
+      );
     }
-
-    setOrderProducts(newArr);
-  };
-
-  const handleRemoveBomPart = (productIndex, partId) => {
-    const newArr = [...orderProducts];
-    const product = newArr[productIndex];
-
-    product.bom = product.bom.filter((part) => part.partId !== partId);
-
     setOrderProducts(newArr);
   };
 
@@ -147,31 +209,27 @@ const Orders = () => {
 
   const columns = useMemo(
     () => [
-      { field: "orderId", headerName: "ID", width: 88 },
-      {
-        field: "itemId",
-        headerName: "Item ID",
-        width: 200,
-        renderCell: (params) =>
-          params.row.productId ? params.row.productId : params.row.partId,
-      },
+      { field: "orderId", headerName: "ID", width: 40 },
       { field: "customerId", headerName: "Customer ID", width: 88 },
       { field: "agentId", headerName: "Agent ID", width: 88 },
       { field: "orderType", headerName: "Order Type", width: 88 },
       {
-        field: "modifications",
-        headerName: "Details",
-        width: 160,
+        field: "orderItems",
+        headerName: "Order Items",
+        width: 120,
         renderCell: (params) => (
           <button
-            onClick={() => {}}
+            onClick={handleOpenOrderDetails(params)}
             className="flex flex-row items-center gap-3 hover:text-blue-800"
           >
-            <h1>View Order Details</h1>
+            <h1>View Order</h1>
             <Book size={16} />
           </button>
         ),
       },
+      { field: "totalAmount", headerName: "Total Amount", width: 104 },
+      { field: "paymentMethod", headerName: "Payment Method", width: 120 },
+      { field: "notes", headerName: "Notes", width: 88 },
       { field: "createdAt", headerName: "Created At", width: 200 },
       {
         field: "updatedAt",
@@ -277,6 +335,11 @@ const Orders = () => {
     setSelectedRowsCount(selectedRows.length);
   }, [selectedRows]);
 
+  const handleDeleteOrders = async () => {
+    await deleteOrderMutation({ orderIds: selectedRows });
+    setSelectedRows([]);
+  };
+
   const handleCloseModal = () => {
     setOpenModal(false);
     setOrderParts([{ partId: null, quantity: 1 }]);
@@ -287,8 +350,19 @@ const Orders = () => {
       orderType: "",
       paymentMethod: "",
       customerId: "",
-      note: "",
+      notes: "",
     });
+    prevQuantitiesRef.current = []
+  };
+
+  const handleOpenOrderDetails = (params) => () => {
+    setOpenOrderDetailsModal(true);
+    setOrderDetails(params.row.orderItems);
+  };
+
+  const handleCloseOrderDetails = () => {
+    setOpenOrderDetailsModal(false);
+    setOrderDetails([]);
   };
 
   return (
@@ -338,7 +412,7 @@ const Orders = () => {
             </button>
             <button
               key={selectedRowsCount}
-              onClick={() => {}}
+              onClick={handleDeleteOrders}
               disabled={selectedRowsCount < 1}
               className={`${
                 selectedRowsCount < 1
@@ -376,7 +450,7 @@ const Orders = () => {
           >
             <h2 className="text-2xl font-semibold mb-2">Create Order</h2>
 
-            <form onSubmit={() => {}} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
               <Autocomplete
                 options={ORDER_TYPE}
                 value={formValues.orderType}
@@ -464,11 +538,11 @@ const Orders = () => {
 
                   <TextField
                     label="Notes"
-                    value={formValues.note}
+                    value={formValues.notes}
                     onChange={(e) =>
                       setFormValues({
                         ...formValues,
-                        note: e.target.value,
+                        notes: e.target.value,
                       })
                     }
                     multiline
@@ -479,7 +553,7 @@ const Orders = () => {
 
                   <div className="flex justify-end mt-8">
                     <Button
-                      // disabled={!canSubmitNewProductForm}
+                      disabled={!canSubmitForm}
                       type="submit"
                       variant="contained"
                       color="primary"
@@ -656,7 +730,6 @@ const Orders = () => {
                                       <TableRow>
                                         <TableCell>Part ID</TableCell>
                                         <TableCell>Quantity</TableCell>
-                                        <TableCell>Action</TableCell>
                                       </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -666,30 +739,18 @@ const Orders = () => {
                                           <TableCell>
                                             <TextField
                                               type="number"
-                                              defaultValue={item.quantity}
+                                              value={item.quantity} // Use value instead of defaultValue
                                               sx={{ width: 100 }}
-                                              onChange={(e) =>
-                                                handleBomModification(
-                                                  productIndex,
-                                                  item.partId,
-                                                  e.target.value
-                                                )
+                                              onChange={
+                                                (e) =>
+                                                  handleBomModification(
+                                                    productIndex,
+                                                    item.partId,
+                                                    parseInt(e.target.value) ||
+                                                      0
+                                                  ) // Convert to number
                                               }
                                             />
-                                          </TableCell>
-                                          <TableCell>
-                                            <Button
-                                              variant="outlined"
-                                              color="error"
-                                              onClick={() =>
-                                                handleRemoveBomPart(
-                                                  productIndex,
-                                                  item.partId
-                                                )
-                                              }
-                                            >
-                                              Remove
-                                            </Button>
                                           </TableCell>
                                         </TableRow>
                                       ))}
@@ -724,7 +785,7 @@ const Orders = () => {
                                 email: newValue.email,
                                 phoneNumber: newValue.phoneNumber,
                                 ssmNumber: newValue.ssmNumber,
-                                postCode: newValue.postCode
+                                postCode: newValue.postCode,
                               });
                             } else {
                               setFormValues((prev) => ({
@@ -736,7 +797,7 @@ const Orders = () => {
                                 email: "",
                                 phoneNumber: "",
                                 ssmNumber: "",
-                                postCode: ""
+                                postCode: "",
                               });
                             }
                           }}
@@ -786,21 +847,43 @@ const Orders = () => {
                             </>
                           )}
                         </div>
+
+                        {/* Payment Method */}
+                        <h3 className="text-2xl font-semibold mb-4">
+                          Payment Method
+                        </h3>
+
+                        <Autocomplete
+                          options={PAYMENT_METHOD}
+                          value={formValues.paymentMethod}
+                          onChange={(e, newValue) =>
+                            setFormValues((prev) => ({
+                              ...prev,
+                              paymentMethod: newValue,
+                            }))
+                          }
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Select Payment method"
+                              required
+                            />
+                          )}
+                          sx={{ width: 300 }}
+                        />
                       </>
                     )}
 
                     {/* Notes and Submit */}
-                    <h3 className="text-2xl font-semibold mb-4">
-                          Comments
-                        </h3>
+                    <h3 className="text-2xl font-semibold my-4">Comments</h3>
 
                     <TextField
                       label="Write a comment"
-                      value={formValues.note}
+                      value={formValues.notes}
                       onChange={(e) =>
                         setFormValues({
                           ...formValues,
-                          note: e.target.value,
+                          notes: e.target.value,
                         })
                       }
                       multiline
@@ -811,7 +894,7 @@ const Orders = () => {
 
                     <div className="flex justify-end mt-8">
                       <Button
-                        // disabled={!canSubmitNewProductForm}
+                        disabled={!canSubmitForm}
                         type="submit"
                         variant="contained"
                         color="primary"
@@ -823,6 +906,43 @@ const Orders = () => {
                 </div>
               )}
             </form>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        open={openOrderDetailsModal}
+        onClose={handleCloseOrderDetails}
+        aria-labelledby="row-bom-details"
+      >
+        <div
+          onClick={handleCloseOrderDetails}
+          className="flex items-center justify-center h-screen"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white p-8 rounded-lg shadow-lg w-96"
+          >
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Product ID</TableCell>
+                    <TableCell>Part ID</TableCell>
+                    <TableCell>Quantity</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {orderDetails &&
+                    orderDetails.map((item) => (
+                      <TableRow key={item.productId || item.partId}>
+                        <TableCell>{item.productId || ""}</TableCell>
+                        <TableCell>{item.partId || ""}</TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </div>
         </div>
       </Modal>

@@ -7,7 +7,11 @@ import {
   sumBomChanges,
 } from "../../utils/orderCalculation.js";
 
-import { postCreateInvoice } from "../invoices/services.js";
+import { patchInventoryParts } from "../inventory/services.js";
+import {
+  postCreateSalesSummary,
+  postCreateTopProductsSummary,
+} from "../dashboard/services.js";
 
 const prisma = new PrismaClient();
 
@@ -93,6 +97,10 @@ export const postCreateOrder = async ({
   paymentMethod = null,
   notes = "",
 }) => {
+  let newOrder = null;
+  let newInvoice = null;
+  let updatedParts = null;
+
   if (
     !orderType ||
     !orderItems ||
@@ -112,10 +120,34 @@ export const postCreateOrder = async ({
     parsedOrderItems &&
     Array.isArray(parsedOrderItems)
   ) {
-    const productIds = parsedOrderItems
-      .map((item) => item.productId)
-      .filter(Boolean);
-    const partIds = parsedOrderItems.map((item) => item.partId).filter(Boolean);
+    const aggregatedItems = parsedOrderItems.reduce(
+      (acc, item) => {
+        const { productId, partId, quantity, bom } = item;
+
+        if (productId) {
+          acc.products[productId] =
+            (acc.products[productId] || 0) + parseInt(quantity);
+
+          if (bom && Array.isArray(bom)) {
+            bom.forEach((bomItem) => {
+              const { partId: bomPartId, quantity: bomQuantity } = bomItem;
+              acc.parts[bomPartId] =
+                (acc.parts[bomPartId] || 0) + bomQuantity * parseInt(quantity);
+            });
+          }
+        }
+
+        if (partId) {
+          acc.parts[partId] = (acc.parts[partId] || 0) + parseInt(quantity);
+        }
+
+        return acc;
+      },
+      { products: {}, parts: {} }
+    );
+
+    const productIds = Object.keys(aggregatedItems.products);
+    const partIds = Object.keys(aggregatedItems.parts);
 
     const [products, inventoryParts] = await Promise.all([
       prisma.products.findMany({
@@ -135,16 +167,9 @@ export const postCreateOrder = async ({
       inventoryParts.map((p) => [p.partId, p.partPrice])
     );
 
-    const productCount = productIds.length;
-    const partCount = partIds.length;
-
-    if (productCount > 1 || (productCount === 0 && partCount > 0)) {
-      setType = "C";
-    }
-
     const totalPriceChangesArr = await Promise.all(
       parsedOrderItems.map(async (orderItem) => {
-        const { productId, partId, bom: orderBom } = orderItem;
+        const { productId, partId, bom: orderBom, quantity } = orderItem;
 
         if (productId) {
           const product = productMap[productId];
@@ -152,48 +177,96 @@ export const postCreateOrder = async ({
             throw new HttpError(404, `Product ${productId} not found`);
 
           const backendBom = product.bom;
-          bomChanges = sumBomChanges(backendBom, orderBom || []);
+          const productBomChanges = sumBomChanges(backendBom, orderBom || []);
 
-          const calculatedCosts = await calculateTotalCost(bomChanges, partMap);
-          return product.basePrice + calculatedCosts;
+          bomChanges.push(...productBomChanges);
+
+          const calculatedCosts = await calculateTotalCost(
+            productBomChanges,
+            partMap
+          );
+          return product.basePrice * parseInt(quantity) + calculatedCosts;
         } else if (partId) {
           const partPrice = partMap[partId];
           if (!partPrice) throw new HttpError(404, `Part ${partId} not found`);
-          return partPrice;
+          return partPrice * parseInt(quantity);
         }
       })
     );
-    if (bomChanges.length) {
-      setType = "A";
-    }
 
     totalAmount = totalPriceChangesArr.reduce((sum, price) => sum + price, 0);
+
+    const partsArray = Object.keys(aggregatedItems.parts).map((key) => {
+      return { partId: key, quantity: aggregatedItems.parts[key] };
+    });
+
+    await patchInventoryParts({
+      inventoryParts: partsArray,
+      isSale: true,
+    });
+
+    newOrder = await prisma.orders.create({
+      data: {
+        orderType,
+        orderItems: parsedOrderItems,
+        agentId,
+        customerId,
+        paymentMethod,
+        totalAmount,
+        setType,
+        notes,
+      },
+    });
+
+    await postCreateSalesSummary();
+
+    // if (newOrder && paymentMethod && customerId) {
+    // try {
+    //   newInvoice = await postCreateInvoice({
+    //     orderId: newOrder.orderId,
+    //     orderData: newOrder,
+    //   });
+    // } catch (e) {
+    //   throw new HttpError(500, `Error creating order invoice: ${e.message}`);
+    // }
+    // }
+  } else if (
+    orderType === "STOCK" &&
+    parsedOrderItems &&
+    Array.isArray(parsedOrderItems)
+  ) {
+    updatedParts = await patchInventoryParts({
+      inventoryParts: parsedOrderItems,
+    });
+    newOrder = await prisma.orders.create({
+      data: {
+        orderType,
+        orderItems: parsedOrderItems,
+        agentId,
+        notes,
+      },
+    });
   }
 
-  const newOrder = await prisma.orders.create({
-    data: {
-      orderType,
-      orderItems: parsedOrderItems,
-      agentId,
-      customerId,
-      paymentMethod,
-      totalAmount,
-      setType,
-      notes,
+  await postCreateTopProductsSummary();
+
+  return {
+    orderData: newOrder,
+    invoiceData: newInvoice,
+    inventoryData: updatedParts,
+  };
+};
+
+export const deleteOrders = async ({ orderIds = [] }) => {
+  if (orderIds.length === 0) {
+    throw new HttpError(400, "Missing required fields");
+  }
+
+  await prisma.orders.deleteMany({
+    where: {
+      orderId: {
+        in: orderIds,
+      },
     },
   });
-
-  if (newOrder && paymentMethod && customerId && orderType === "SALE") {
-    try {
-      const newInvoice = await postCreateInvoice({
-        orderId: newOrder.orderId,
-        orderData: newOrder,
-      });
-      return { orderData: newOrder, invoiceData: newInvoice };
-    } catch (e) {
-      throw new HttpError(500, `Error creating order invoice: ${e.message}`);
-    }
-  }
-
-  return { orderData: newOrder, invoiceData: null };
 };

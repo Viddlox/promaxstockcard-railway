@@ -1,5 +1,5 @@
 "use client";
-import { Save, Check } from "lucide-react";
+import { Save, Check, QrCode } from "lucide-react";
 import { useState } from "react";
 import { CircularProgress } from "@mui/material";
 
@@ -15,12 +15,12 @@ const DataGridActions = ({ params, rowId, setRowId }) => {
       setTimeout(() => {
         setSuccess(false);
       }, 2000);
-	  setRowId(null);
+      setRowId(null);
     }, 2000);
   };
 
   return (
-    <div className="relative">
+    <div className="relative flex flex-row">
       {success ? (
         <div
           className="bg-gray-100 rounded-full p-2 hover:bg-green-100"
@@ -37,6 +37,12 @@ const DataGridActions = ({ params, rowId, setRowId }) => {
           <Save className="text-gray-500" size={20} />
         </button>
       )}
+      <button
+        className="bg-gray-100 rounded-full p-2 hover:bg-blue-100"
+        onClick={() => {}}
+      >
+        <QrCode className="text-gray-500" size={20} />
+      </button>
       {loading && (
         <CircularProgress
           size={40}

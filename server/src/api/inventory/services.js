@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { HttpError } from "../../utils/http.js";
 import { getLimitAndCursor } from "../../utils/query.js";
+import { postCreateInventorySummary } from "../dashboard/services.js";
 
 const prisma = new PrismaClient();
 
@@ -89,4 +90,43 @@ export const deleteInventoryParts = async ({ partIds = [] }) => {
       },
     },
   });
+};
+
+export const patchInventoryParts = async ({
+  inventoryParts,
+  isSale = false,
+}) => {
+  if (!inventoryParts || inventoryParts.length === 0) {
+    throw new HttpError(400, "Missing required fields");
+  }
+
+  try {
+    const updatedParts = await Promise.all(
+      inventoryParts.map(async ({ partId, quantity }) => {
+        const currentPart = await prisma.inventory.findUnique({
+          where: { partId },
+          select: { partQuantity: true },
+        });
+
+        if (!currentPart) {
+          throw new HttpError(404, `Part ${partId} not found`);
+        }
+
+        const updatedQuantity =
+          currentPart.partQuantity +
+          (isSale ? -parseInt(quantity) : parseInt(quantity));
+
+        const updatedPart = await prisma.inventory.update({
+          where: { partId },
+          data: { partQuantity: updatedQuantity },
+        });
+        return updatedPart;
+      })
+    );
+    await postCreateInventorySummary()
+
+    return updatedParts;
+  } catch (error) {
+    throw new HttpError(500, "Failed to update inventory parts");
+  }
 };

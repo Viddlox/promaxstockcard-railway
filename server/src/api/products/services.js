@@ -21,14 +21,14 @@ export const getProducts = async ({ limit, cursor, search = "" }) => {
         }
       : undefined,
     where: search
-      ? { productproductName: { contains: search, mode: "insensitive" } }
+      ? { productName: { contains: search, mode: "insensitive" } }
       : {},
     orderBy: { updatedAt: "desc" },
   });
 
   const totalCount = await prisma.products.count({
     where: search
-      ? { productproductName: { contains: search, mode: "insensitive" } }
+      ? { productName: { contains: search, mode: "insensitive" } }
       : {},
   });
 
@@ -55,7 +55,13 @@ export const postCreateProduct = async ({
   quantity = 1,
   bom = null,
 }) => {
-  if (!productId || !productName || !basePrice || quantity === undefined || !bom) {
+  if (
+    !productId ||
+    !productName ||
+    !basePrice ||
+    quantity === undefined ||
+    !bom
+  ) {
     throw new HttpError(400, "Missing required fields");
   }
 
@@ -93,7 +99,7 @@ export const postCreateProduct = async ({
       productName,
       basePrice,
       quantity: parseInt(quantity, 10),
-      bom: bom.length ? JSON.parse(bom) : null
+      bom: bom.length ? JSON.parse(bom) : null,
     },
   });
 
@@ -112,46 +118,4 @@ export const deleteProducts = async ({ productIds = [] }) => {
       },
     },
   });
-};
-
-export const getTopProducts = async () => {
-  const invoices = await prisma.invoices.findMany();
-
-  const productCount = {};
-
-  invoices.forEach((invoice) => {
-    const { productId, modifications } = invoice.orderSummary;
-
-    if (productId) {
-      productCount[productId] = (productCount[productId] || 0) + 1;
-    }
-
-    if (modifications && Array.isArray(modifications)) {
-      modifications.forEach((mod) => {
-        if (mod.productId && mod.modificationType === "add") {
-          productCount[mod.productId] = (productCount[mod.productId] || 0) + 1;
-        }
-      });
-    }
-  });
-
-  const topProductIds = Object.entries(productCount)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 10)
-    .map(([productId]) => productId);
-
-  const topProducts = await prisma.products.findMany({
-    where: {
-      productId: {
-        in: topProductIds,
-      },
-    },
-  });
-
-  const sortedTopProducts = topProducts.sort(
-    (a, b) =>
-      topProductIds.indexOf(a.productId) - topProductIds.indexOf(b.productId)
-  );
-
-  return sortedTopProducts;
 };

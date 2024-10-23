@@ -1,12 +1,8 @@
 import { Router } from "express";
-import {
-  handleGetSalesSummary,
-  handleGetInventorySummary,
-} from "./handlers.js";
+import { handleGetDashboardMetrics } from "./handlers.js";
 
 const router = Router();
 
-router.get("/sales-summary", handleGetSalesSummary);
-router.get("/inventory-summary", handleGetInventorySummary);
+router.get("/", handleGetDashboardMetrics);
 
 export { router as dashboardRoutes };
