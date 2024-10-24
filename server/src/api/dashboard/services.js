@@ -23,7 +23,9 @@ export const getDashboardMetrics = async () => {
   });
 
   const topFewestPartsData =
-    inventorySummaryData[inventorySummaryData.length - 1].topFewestParts;
+    inventorySummaryData.length > 0
+      ? inventorySummaryData[inventorySummaryData.length - 1].topFewestParts
+      : null;
 
   return {
     inventorySummaryData,
@@ -89,23 +91,15 @@ export const postCreateSalesSummary = async () => {
     },
   });
 
-  // Log the orders for debugging
-  console.log("Orders:", orders);
-
   const totalValue = orders
-    .map((order) => Number(order.totalAmount)) // Ensure it's a number
+    .map((order) => Number(order.totalAmount))
     .reduce((sum, num) => sum + num, 0);
-
-  console.log("Total Value:", totalValue);
 
   const previousSalesSummary = await prisma.salesSummary.findFirst({
     orderBy: {
       createdAt: "desc",
     },
   });
-
-  // Log previous sales summary for debugging
-  console.log("Previous Sales Summary:", previousSalesSummary);
 
   let changePercentage = 0;
 
@@ -155,7 +149,7 @@ export const postCreateInventorySummary = async () => {
   const newInventorySummary = await prisma.inventorySummary.create({
     data: {
       totalAmount,
-      topFewestProducts: fewestProducts,
+      topFewestParts: fewestProducts,
       changePercentage,
     },
   });

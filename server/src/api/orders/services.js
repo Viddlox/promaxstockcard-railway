@@ -131,13 +131,10 @@ export const postCreateOrder = async ({
           if (bom && Array.isArray(bom)) {
             bom.forEach((bomItem) => {
               const { partId: bomPartId, quantity: bomQuantity } = bomItem;
-              acc.parts[bomPartId] =
-                (acc.parts[bomPartId] || 0) + bomQuantity * parseInt(quantity);
+              acc.parts[bomPartId] = (acc.parts[bomPartId] || 0) + bomQuantity;
             });
           }
-        }
-
-        if (partId) {
+        } else if (partId) {
           acc.parts[partId] = (acc.parts[partId] || 0) + parseInt(quantity);
         }
 
