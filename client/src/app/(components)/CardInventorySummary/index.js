@@ -38,22 +38,22 @@ const CardInventorySummary = () => {
                 <p className="text-xs text-gray-400">Inventory Levels</p>
                 <div className="flex items-center">
                   <p className="text-2xl font-bold">
-                    {lastDataPoint.totalAmount || 0}
+                    {lastDataPoint?.totalAmount || 0}
                   </p>
                   {lastDataPoint && (
                     <p
                       className={`text-sm ${
-                        lastDataPoint.changePercentage >= 0
+                        lastDataPoint?.changePercentage >= 0
                           ? "text-green-500"
                           : "text-red-500"
                       } flex ml-3`}
                     >
-                      {lastDataPoint.changePercentage >= 0 ? (
+                      {lastDataPoint?.changePercentage >= 0 ? (
                         <TrendingUp className="w-5 h-5 mr-1" />
                       ) : (
                         <TrendingDown className="w-5 h-5 mr-1" />
                       )}
-                      {Math.abs(lastDataPoint.changePercentage).toPrecision(3)}%
+                      {Math.abs(lastDataPoint?.changePercentage).toPrecision(3)}%
                     </p>
                   )}
                 </div>

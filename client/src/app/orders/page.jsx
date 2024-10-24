@@ -13,7 +13,6 @@ import {
 import { useAppSelector } from "@/app/redux";
 import { Book, Trash, PlusSquare } from "lucide-react";
 import { DataGrid } from "@mui/x-data-grid";
-import DataGridActions from "@/app/(components)/DataGridActions";
 import { formatTimeStamp } from "@/app/(utils)/date";
 import {
   Modal,
@@ -50,10 +49,8 @@ const Orders = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [selectedRowsCount, setSelectedRowsCount] = useState(0);
   const [openModal, setOpenModal] = useState(false);
-  const [orderParts, setOrderParts] = useState([{ partId: null, quantity: 0 }]);
-  const [orderProducts, setOrderProducts] = useState([
-    { productId: null, quantity: 0, bom: null, productName: "" },
-  ]);
+  const [orderParts, setOrderParts] = useState([]);
+  const [orderProducts, setOrderProducts] = useState([]);
   const [customerDetails, setCustomerDetails] = useState({
     address: "",
     phoneNumber: "",
@@ -138,12 +135,19 @@ const Orders = () => {
     setOrderParts(orderParts.filter((_, i) => i !== index));
   };
 
+  const originalBomRef = useRef([]);
+
   const handleProductSelection = (index, newItem) => {
     const newArr = [...orderProducts];
 
     if (newItem === null) {
       newArr.splice(index, 1);
     } else if (newItem.productId) {
+      originalBomRef.current[index] = newItem.bom.map((part) => ({
+        partId: part.partId,
+        quantity: part.quantity,
+      }));
+
       newArr[index] = {
         productId: newItem.productId,
         quantity: 1,
@@ -159,20 +163,27 @@ const Orders = () => {
       const newArr = [...orderProducts];
       const product = newArr[index];
 
-      const prevQuantity = prevQuantitiesRef.current[index] || product.quantity;
-      const quantityDifference = quantity - prevQuantity;
+      const originalBom = originalBomRef.current[index];
+
+      if (!originalBom) {
+        return;
+      }
 
       product.quantity = quantity;
 
       if (product.bom && product.bom.length > 0) {
-        product.bom = product.bom.map((part) => {
+        product.bom = product.bom.map((part, i) => {
+          const originalPart = originalBom.find(
+            (bomPart) => bomPart.partId === part.partId
+          );
+
           return {
             ...part,
-            quantity: part.quantity + quantityDifference,
+            quantity: originalPart.quantity * quantity,
           };
         });
       }
-      prevQuantitiesRef.current[index] = quantity;
+
       setOrderProducts(newArr);
     }
   };
@@ -236,14 +247,6 @@ const Orders = () => {
         headerName: "Updated At",
         width: 200,
         valueGetter: (row) => formatTimeStamp(row),
-      },
-      {
-        field: "actions",
-        headerName: "Actions",
-        type: "actions",
-        renderCell: (params) => (
-          <DataGridActions params={params} rowId={rowId} setRowId={setRowId} />
-        ),
       },
     ],
     [rowId]
@@ -342,17 +345,15 @@ const Orders = () => {
 
   const handleCloseModal = () => {
     setOpenModal(false);
-    setOrderParts([{ partId: null, quantity: 1 }]);
-    setOrderProducts([
-      { productId: null, quantity: 1, bom: null, productName: "" },
-    ]);
+    setOrderParts([]);
+    setOrderProducts([]);
     setFormValues({
       orderType: "",
       paymentMethod: "",
       customerId: "",
       notes: "",
     });
-    prevQuantitiesRef.current = []
+    prevQuantitiesRef.current = [];
   };
 
   const handleOpenOrderDetails = (params) => () => {
