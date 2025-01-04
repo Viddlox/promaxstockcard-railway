@@ -98,7 +98,6 @@ export const postCreateOrder = async ({
   notes = "",
 }) => {
   let newOrder = null;
-  let newInvoice = null;
   let updatedParts = null;
 
   if (
@@ -214,19 +213,7 @@ export const postCreateOrder = async ({
         notes,
       },
     });
-
     await postCreateSalesSummary();
-
-    // if (newOrder && paymentMethod && customerId) {
-    // try {
-    //   newInvoice = await postCreateInvoice({
-    //     orderId: newOrder.orderId,
-    //     orderData: newOrder,
-    //   });
-    // } catch (e) {
-    //   throw new HttpError(500, `Error creating order invoice: ${e.message}`);
-    // }
-    // }
   } else if (
     orderType === "STOCK" &&
     parsedOrderItems &&
@@ -249,7 +236,6 @@ export const postCreateOrder = async ({
 
   return {
     orderData: newOrder,
-    invoiceData: newInvoice,
     inventoryData: updatedParts,
   };
 };

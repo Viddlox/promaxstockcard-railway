@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { NestedNavbar } from "@/app/(components)/NestedNavbar";
 import {
   useGetOrdersQuery,
   useCreateOrderMutation,
@@ -13,7 +12,6 @@ import {
 import { useAppSelector } from "@/app/redux";
 import { Book, Trash, PlusSquare } from "lucide-react";
 import { DataGrid } from "@mui/x-data-grid";
-import { formatTimeStamp } from "@/app/(utils)/date";
 import {
   Modal,
   TextField,
@@ -28,16 +26,14 @@ import {
   Paper,
 } from "@mui/material";
 
+import Header from "@/app/(components)/Header";
+import { formatTimeStamp } from "@/app/(utils)/date";
+
 const PAGE_SIZE = 10;
 const ORDER_TYPE = ["SALE", "STOCK"];
 const PAYMENT_METHOD = ["COD", "TRANSFER"];
 
 const Orders = () => {
-  const [activeTab, setActiveTab] = useState("orders");
-  const tabs = [
-    { id: "orders", label: "Orders", href: "/orders" },
-    { id: "invoices", label: "Invoices", href: "/orders/invoices" },
-  ];
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: PAGE_SIZE,
@@ -226,7 +222,7 @@ const Orders = () => {
       { field: "orderType", headerName: "Order Type", width: 88 },
       {
         field: "orderItems",
-        headerName: "Order Items",
+        headerName: "Order Details",
         width: 120,
         renderCell: (params) => (
           <button
@@ -241,7 +237,12 @@ const Orders = () => {
       { field: "totalAmount", headerName: "Total Amount", width: 104 },
       { field: "paymentMethod", headerName: "Payment Method", width: 120 },
       { field: "notes", headerName: "Notes", width: 88 },
-      { field: "createdAt", headerName: "Created At", width: 200 },
+      {
+        field: "createdAt",
+        headerName: "Created At",
+        width: 200,
+        valueGetter: (row) => formatTimeStamp(row),
+      },
       {
         field: "updatedAt",
         headerName: "Updated At",
@@ -367,12 +368,8 @@ const Orders = () => {
   };
 
   return (
-    <div>
-      <NestedNavbar
-        setActiveTab={setActiveTab}
-        activeTab={activeTab}
-        tabs={tabs}
-      />
+    <div className="flex flex-col">
+      <Header name="Orders" />
       {isLoading && <div className="py-4">Loading...</div>}
       {isError && (
         <div className="text-center text-red-500 py-4">

@@ -5,11 +5,11 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 
-import { dashboardRoutes } from "./api/dashboard/routes.js";
+// import { dashboardRoutes } from "./api/dashboard/routes.js";
 import { productRoutes } from "./api/products/routes.js";
 import { inventoryRoutes } from "./api/inventory/routes.js";
 import { orderRoutes } from "./api/orders/routes.js";
-import { invoicesRoutes } from "./api/invoices/routes.js";
+// import { invoicesRoutes } from "./api/invoices/routes.js";
 import { customerRoutes } from "./api/customer/routes.js";
 
 /* CONFIGURATIONS */
@@ -24,11 +24,11 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
 /* ROUTES */
-app.use("/dashboard", dashboardRoutes);
+// app.use("/dashboard", dashboardRoutes);
 app.use("/products", productRoutes);
 app.use("/inventory", inventoryRoutes);
 app.use("/orders", orderRoutes);
-app.use("/invoices", invoicesRoutes);
+// app.use("/invoices", invoicesRoutes);
 app.use("/customers", customerRoutes)
 
 /* SERVER */

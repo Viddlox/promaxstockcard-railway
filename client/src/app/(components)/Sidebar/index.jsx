@@ -69,9 +69,9 @@ const Sidebar = () => {
 
       <div className="flex-grow mt-8">
         <SidebarLink
-          href={"/dashboard"}
-          icon={Layout}
-          label={"Dashboard"}
+          href={"/orders"}
+          icon={Receipt}
+          label={"Orders"}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
@@ -84,12 +84,6 @@ const Sidebar = () => {
           href={"/inventory"}
           icon={Archive}
           label={"Inventory"}
-          isCollapsed={isSidebarCollapsed}
-        />
-        <SidebarLink
-          href={"/orders"}
-          icon={Receipt}
-          label={"Orders & Invoices"}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink

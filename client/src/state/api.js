@@ -126,10 +126,6 @@ export const api = createApi({
       }),
       providesTags: ["Customers"],
     }),
-    getDashboardMetrics: build.query({
-      query: () => "/dashboard",
-      providesTags: ["Dashboard"],
-    }),
   }),
 });
 
@@ -144,5 +140,4 @@ export const {
   useCreateOrderMutation,
   useGetCustomersQuery,
   useDeleteOrdersMutation,
-  useGetDashboardMetricsQuery,
 } = api;

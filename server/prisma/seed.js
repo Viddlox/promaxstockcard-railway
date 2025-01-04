@@ -15,12 +15,6 @@ const deleteAllData = async (orderedFileNames) => {
     return modelName.charAt(0).toUpperCase() + modelName.slice(1);
   });
 
-  const invoicesModel = prisma.invoices;
-  if (invoicesModel) {
-    await invoicesModel.deleteMany({});
-    console.log("Cleared data from Invoices");
-  }
-
   const ordersModel = prisma.orders;
   if (ordersModel) {
     await ordersModel.deleteMany({});
@@ -49,10 +43,6 @@ const main = async () => {
     "users.json",
     "customers.json",
     "orders.json",
-    "invoices.json",
-    "inventorySummary.json",
-    "salesSummary.json",
-    "topProductsSummary.json"
   ];
 
   const orderedFileNamesToSeed = [
