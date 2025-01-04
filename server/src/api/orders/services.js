@@ -8,10 +8,10 @@ import {
 } from "../../utils/orderCalculation.js";
 
 import { patchInventoryParts } from "../inventory/services.js";
-import {
-  postCreateSalesSummary,
-  postCreateTopProductsSummary,
-} from "../dashboard/services.js";
+// import {
+//   postCreateSalesSummary,
+//   postCreateTopProductsSummary,
+// } from "../dashboard/services.js";
 
 const prisma = new PrismaClient();
 
@@ -213,7 +213,7 @@ export const postCreateOrder = async ({
         notes,
       },
     });
-    await postCreateSalesSummary();
+    // await postCreateSalesSummary();
   } else if (
     orderType === "STOCK" &&
     parsedOrderItems &&
@@ -232,7 +232,7 @@ export const postCreateOrder = async ({
     });
   }
 
-  await postCreateTopProductsSummary();
+  // await postCreateTopProductsSummary();
 
   return {
     orderData: newOrder,

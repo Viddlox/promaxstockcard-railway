@@ -8,6 +8,7 @@ export const NestedNavbar = ({ setActiveTab, activeTab, tabs }) => {
       <nav className="flex space-x-12 relative">
         {tabs.map((tab) => (
           <Link
+            passHref
             key={tab.id}
             href={tab.href}
             className={`relative py-3 text-lg ${

@@ -45,7 +45,7 @@ const Sidebar = () => {
 
   const sidebarClassNames = `fixed flex flex-col ${
     isSidebarCollapsed ? "w-0 md:w-16" : "w-88 md:w-72"
-  } bg-white transition-all duration-300 overflow-hidden h-full shadow-md z-40`;
+  } bg-gray-100 transition-all duration-300 overflow-hidden h-full shadow-md z-40`;
 
   return (
     <div className={sidebarClassNames}>
@@ -87,7 +87,7 @@ const Sidebar = () => {
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
-          href={"/users"}
+          href={"/users/agents"}
           icon={User}
           label={"Users"}
           isCollapsed={isSidebarCollapsed}

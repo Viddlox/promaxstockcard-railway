@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { HttpError } from "../../utils/http.js";
 import { getLimitAndCursor } from "../../utils/query.js";
-import { postCreateInventorySummary } from "../dashboard/services.js";
+// import { postCreateInventorySummary } from "../dashboard/services.js";
 
 const prisma = new PrismaClient();
 
@@ -123,7 +123,7 @@ export const patchInventoryParts = async ({
         return updatedPart;
       })
     );
-    await postCreateInventorySummary()
+    // await postCreateInventorySummary()
 
     return updatedParts;
   } catch (error) {

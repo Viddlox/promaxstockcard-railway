@@ -322,6 +322,23 @@ const Products = () => {
     <div className="flex flex-col">
       <Header name="Products" />
       <DataGrid
+        sx={{
+          "& .MuiDataGrid-columnSeparator": {
+            color: "#d1d5db",
+          },
+          "& .MuiDataGrid-columnHeaders div[role='row']": {
+            backgroundColor: "#f3f4f6",
+          },
+          "& .MuiDataGrid-checkbox": {
+            color: "#4b5563",
+          },
+          "& .MuiCheckbox-root": {
+            color: "#4b5563",
+          },
+          "& .MuiCheckbox-root.Mui-checked": {
+            color: "#2563eb",
+          },
+        }}
         className="bg-white shadow rounded-lg border border-gray-200 mt-2 !text-gray-700"
         rows={rows}
         columns={columns}

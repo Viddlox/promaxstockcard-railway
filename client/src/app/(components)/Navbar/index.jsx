@@ -33,9 +33,9 @@ const Navbar = () => {
     dispatch(setIsSidebarCollapsed(!isSidebarCollapsed));
   };
 
-  const toggleDarkMode = () => {
-    dispatch(setIsDarkMode(!isDarkMode));
-  };
+  // const toggleDarkMode = () => {
+  //   dispatch(setIsDarkMode(!isDarkMode));
+  // };
 
   const handleSearch = (e) => {
     setSearchInputLocal(e.target.value);
@@ -79,13 +79,17 @@ const Navbar = () => {
       <div className="flex justify-between items-center gap-5">
         <div className="hidden md:flex justify-between items-center gap-5">
           <div className="pl-7">
-            <button onClick={toggleDarkMode}>
+            {/* <button onClick={toggleDarkMode}>
               {!isDarkMode ? (
                 <Moon className="cursor-pointer text-gray-500" size={24} />
               ) : (
                 <Sun className="cursor-pointer text-gray-500" size={24} />
               )}
-            </button>
+            </button> */}
+          </div>
+          <div className="flex items-center gap-3 cursor-pointer">
+            <UserCircle size={24} />
+            <span className="font-semibold">Ethan Loh</span>
           </div>
           <div className="relative">
             <Bell className="cursor-pointer text-gray-500" size={24} />
@@ -98,10 +102,6 @@ const Navbar = () => {
             </span>
           </div>
           <hr className="w-0 h-7 border border-solid border-l border-gray-300 mx-3" />
-          <div className="flex items-center gap-3 cursor-pointer">
-            <UserCircle size={24} />
-            <span className="font-semibold">Ethan Loh</span>
-          </div>
         </div>
         <Link href="/settings">
           <Settings className="cursor-pointer text-gray-500" size={24} />
