@@ -7,9 +7,10 @@ on:
 
 env:
   EC2_USER: ec2-user
-  EC2_HOST: 3.0.52.94
+  EC2_HOST: 54.169.195.91
   SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
   APP_DIR: /var/www/promaxstock
+  NODE_VERSION: '18.x'
 
 jobs:
   deploy:
