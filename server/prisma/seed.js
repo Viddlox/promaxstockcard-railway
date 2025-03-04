@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import bcrypt from "bcrypt";
 
 import { prisma } from "./prisma.js";
 
@@ -49,7 +50,7 @@ const main = async () => {
     "inventory.json",
     "users.json",
     "customers.json",
-  ]
+  ];
 
   await deleteAllData(orderedFileNames);
 
@@ -64,10 +65,23 @@ const main = async () => {
       continue;
     }
 
-    for (const data of jsonData) {
-      await model.create({
-        data,
-      });
+    // Hash passwords for users
+    if (modelName === 'users') {
+      for (const user of jsonData) {
+        const hashedPassword = await bcrypt.hash(user.password, 10);
+        await model.create({
+          data: {
+            ...user,
+            password: hashedPassword
+          },
+        });
+      }
+    } else {
+      for (const data of jsonData) {
+        await model.create({
+          data,
+        });
+      }
     }
 
     console.log(`Seeded ${modelName} with data from ${fileName}`);

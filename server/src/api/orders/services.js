@@ -12,8 +12,6 @@ import { prisma } from "../../../prisma/prisma.js";
 //   postCreateTopProductsSummary,
 // } from "../dashboard/services.js";
 
-const prisma = new PrismaClient();
-
 export const getOrders = async ({ limit, cursor, search }) => {
   const { limitQuery, cursorQuery } = getLimitAndCursor({ limit, cursor });
 

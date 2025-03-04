@@ -121,6 +121,7 @@ export const signIn = async ({ username, password, refreshToken }) => {
       userId: true,
       password: true,
       refreshTokens: true,
+      role: true
     },
   });
 
@@ -163,9 +164,10 @@ export const signIn = async ({ username, password, refreshToken }) => {
   });
 
   return {
-    id: user.userId,
+    userId: user.userId,
     accessToken,
     refreshToken: newRefreshToken,
+    userRole: user.role,
   };
 };
 

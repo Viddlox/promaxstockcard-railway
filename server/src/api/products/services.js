@@ -1,6 +1,6 @@
 import { HttpError } from "../../utils/http.js";
 import { getLimitAndCursor } from "../../utils/query.js";
-import { prisma } from "../../config/variables.js";
+import { prisma } from "../../../prisma/prisma.js";
 
 export const getProducts = async ({ limit, cursor, search = "" }) => {
   const { limitQuery, cursorQuery } = getLimitAndCursor({ limit, cursor });

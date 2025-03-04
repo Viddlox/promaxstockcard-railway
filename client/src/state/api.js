@@ -6,7 +6,10 @@ const baseQuery = fetchBaseQuery({
   prepareHeaders: (headers, { getState }) => {
     const token = getState().global.accessToken;
     if (token) {
+      console.log("Sending request with token:", token);
       headers.set("Authorization", `Bearer ${token}`);
+    } else {
+      console.log("No token available in state");
     }
     return headers;
   },
@@ -60,7 +63,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 export const api = createApi({
   baseQuery: baseQueryWithReauth, // Use the wrapped base query
   reducerPath: "api",
-  tagTypes: ["Inventory", "Dashboard", "Products", "Orders", "Customers"],
+  tagTypes: ["Inventory", "Dashboard", "Products", "Orders", "Customers", "User"],
   endpoints: (build) => ({
     getInventory: build.query({
       query: ({ limit = 10, cursor, search }) => ({
@@ -183,6 +186,20 @@ export const api = createApi({
       }),
       providesTags: ["Customers"],
     }),
+    signIn: build.mutation({
+      query: ({ username, password }) => ({
+        url: "/user/sign-in",
+        method: "POST",
+        body: { username, password },
+      }),
+    }),
+    signOut: build.mutation({
+      query: ({ userId, refreshToken }) => ({
+        url: "/user/sign-out",
+        method: "POST",
+        body: { userId, refreshToken },
+      }),
+    }),
   }),
 });
 
@@ -197,4 +214,6 @@ export const {
   useCreateOrderMutation,
   useGetCustomersQuery,
   useDeleteOrdersMutation,
+  useSignInMutation,
+  useSignOutMutation,
 } = api;

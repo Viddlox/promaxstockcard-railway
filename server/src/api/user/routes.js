@@ -13,11 +13,11 @@ const router = Router();
 const passportAuth = passport.authenticate("jwt", { session: false });
 
 router.post("/sign-in", handleSignIn);
+router.post("/sign-out", handleSignOut);
 router.post("/token", generateTokensHandler);
 router.use(passportAuth);
 router.get("/", handleGetUsers);
 router.post("/create", handleCreateUser);
 router.delete("/delete", handleDeleteUsers);
-router.post("/sign-out", handleSignOut);
 
 export { router as userRoutes };

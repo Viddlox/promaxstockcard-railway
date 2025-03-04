@@ -2,18 +2,41 @@
 
 import Navbar from "@/app/(components)/Navbar";
 import Sidebar from "@/app/(components)/Sidebar";
-import StoreProvider, { useAppSelector } from "@/app/redux";
+import StoreProvider, { useAppDispatch, useAppSelector } from "@/app/redux";
 import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { initializeState } from "@/state";
 
 const DashboardLayout = ({ children }) => {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const pathname = usePathname();
   const isSidebarCollapsed = useAppSelector(
     (state) => state.global.isSidebarCollapsed
   );
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
+  const accessToken = useAppSelector((state) => state.global.accessToken);
+
+  // Initialize state from localStorage after mounting
+  useEffect(() => {
+    dispatch(initializeState());
+  }, [dispatch]);
 
   useEffect(() => {
     document.documentElement.classList.add(isDarkMode ? "dark" : "light");
-  }, []);
+  }, [isDarkMode]);
+
+  // Handle authentication
+  useEffect(() => {
+    if (!accessToken && pathname !== "/login") {
+      router.push("/login");
+    }
+  }, [accessToken, pathname, router]);
+
+  // Don't render the dashboard layout for the login page
+  if (pathname === "/login") {
+    return children;
+  }
 
   return (
     <div
