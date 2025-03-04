@@ -155,13 +155,21 @@ const Navbar = () => {
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50">
+              <div className={`absolute right-0 mt-2 w-48 rounded-lg shadow-lg py-1 z-50 ${
+                isDarkMode 
+                  ? 'bg-gray-800 border border-gray-700' 
+                  : 'bg-white border border-gray-200'
+              }`}>
                 <button
                   onClick={() => {
                     setIsDropdownOpen(false);
                     // Add profile navigation
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className={`w-full px-4 py-2 text-left text-sm ${
+                    isDarkMode 
+                      ? 'text-gray-200 hover:bg-gray-700' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
                   Profile
                 </button>
@@ -170,17 +178,25 @@ const Navbar = () => {
                     setIsDropdownOpen(false);
                     router.push('/settings');
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className={`w-full px-4 py-2 text-left text-sm ${
+                    isDarkMode 
+                      ? 'text-gray-200 hover:bg-gray-700' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
                   Settings
                 </button>
-                <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                <div className={`my-1 ${
+                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
+                } border-t`}></div>
                 <button
                   onClick={() => {
                     setIsDropdownOpen(false);
                     handleSignOut();
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className={`w-full px-4 py-2 text-left text-sm text-red-600 ${
+                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                  }`}
                 >
                   Sign out
                 </button>

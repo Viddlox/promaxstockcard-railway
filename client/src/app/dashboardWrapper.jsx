@@ -23,27 +23,43 @@ const DashboardLayout = ({ children }) => {
   }, [dispatch]);
 
   useEffect(() => {
-    document.documentElement.classList.add(isDarkMode ? "dark" : "light");
-  }, [isDarkMode]);
+    // Only apply dark mode if we're not on the login page
+    if (pathname !== "/login") {
+      document.documentElement.classList.toggle("dark", isDarkMode);
+    } else {
+      // Always set light mode for login page
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode, pathname]);
 
   // Handle authentication
   useEffect(() => {
-    if (!accessToken && pathname !== "/login") {
-      router.push("/login");
+    // If we're on the login page, don't redirect
+    if (pathname === "/login") {
+      return;
     }
+
+    // If no access token, redirect to login
+    if (!accessToken) {
+      router.push("/login");
+      return;
+    }
+
+    // If we have an access token but it's invalid (401), the baseQueryWithReauth
+    // will handle the refresh attempt and logout if needed
   }, [accessToken, pathname, router]);
 
   // Don't render the dashboard layout for the login page
   if (pathname === "/login") {
-    return children;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {children}
+      </div>
+    );
   }
 
   return (
-    <div
-      className={`${
-        isDarkMode ? "dark" : "light"
-      } flex bg-gray-50 text-gray-900 w-full min-h-screen`}
-    >
+    <div className={`flex bg-gray-50 text-gray-900 w-full min-h-screen ${isDarkMode ? 'dark' : ''}`}>
       <Sidebar />
       <main
         className={`flex flex-col w-full h-full py-7 px-9 bg-gray-50 ${

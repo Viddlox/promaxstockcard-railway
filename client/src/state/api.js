@@ -25,12 +25,11 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
   if (result.error && result.error.status === 401) {
     if (!refreshToken || !accessToken) {
       console.log("No refresh token available, logging out...");
+      api.dispatch(logoutUser());
       return result;
     }
 
     console.log("Storing used token and attempting to refresh...");
-
-    // Store the last used access token before refreshing (new step)
     api.dispatch(setUsedToken(accessToken));
 
     // Attempt to refresh the token
@@ -54,6 +53,8 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
     } else {
       console.log("Refresh token failed, logging out...");
       api.dispatch(logoutUser());
+      // Force redirect to login page
+      window.location.href = '/login';
     }
   }
 
