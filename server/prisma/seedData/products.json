@@ -1,14 +1,5 @@
 [
   {
-    "productId": "C",
-    "productName": "C-SET",
-    "basePrice": 0,
-    "quantity": 0,
-    "bom": null,
-    "createdAt": "2023-10-18T12:00:00Z",
-    "updatedAt": "2023-10-18T12:00:00Z"
-  },
-  {
     "productId": "D712-MDL",
     "productName": "MODEL-712 - DNOR DC-24V ARM MOTOR",
     "basePrice": 625,

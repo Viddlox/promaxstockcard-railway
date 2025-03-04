@@ -52,7 +52,7 @@ model Inventory {
   partName     String
   partPrice    Decimal
   partQuantity Int
-  partUoM      String
+  partUoM      UoM
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
 
@@ -60,18 +60,21 @@ model Inventory {
 }
 
 model Users {
-  userId   Int    @id @default(autoincrement())
-  username String @unique
-  password String
-  role     String
-
-  orders Orders[]
+  userId    String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      String
+  email     String?
+  orders    Orders[]
+  fullName  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@index([username])
 }
 
 model Customers {
-  customerId  Int      @id @default(autoincrement())
+  customerId  String   @id @default(uuid())
   companyName String
   address     String
   phoneNumber String
@@ -87,11 +90,11 @@ model Customers {
 }
 
 model Orders {
-  orderId       Int            @id @default(autoincrement())
+  orderId       String         @id @default(uuid())
   orderType     OrderType
   orderItems    Json
-  agentId       Int
-  customerId    Int?
+  agentId       String
+  customerId    String?
   paymentMethod PaymentMethod?
   totalAmount   Decimal?
   setType       SetType?
@@ -104,5 +107,3 @@ model Orders {
 
   @@unique([updatedAt, orderId])
 }
-
-

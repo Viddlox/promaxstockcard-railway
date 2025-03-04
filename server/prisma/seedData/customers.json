@@ -1,24 +1,18 @@
 [
   {
-    "customerId": 1,
     "companyName": "ADOS CCTV WHOLESALE SDN BHD",
     "address": "NO. 98, JALAN PUTERI 5/5, BANDAR PUTERI PUCHONG, 47100 PUCHONG, SELANGOR.",
     "phoneNumber": "01123456789",
     "ssmNumber": "1184624-P",
     "postCode": "47100",
-    "email": "info@adoscctv.com",
-    "createdAt": "2023-10-18T12:00:00Z",
-    "updatedAt": "2023-10-18T12:00:00Z"
+    "email": "info@adoscctv.com"
   },
   {
-    "customerId": 2,
     "companyName": "PROMAX AUTOMATIONS SDN BHD",
     "address": "NO. 23, JALAN USAHAWAN 5, SETAPAK, 53300 KUALA LUMPUR, MALAYSIA.",
     "phoneNumber": "01234567890",
     "ssmNumber": "1145234-P",
     "postCode": "53300",
-    "email": "contact@promaxauto.com",
-    "createdAt": "2023-10-18T12:01:00Z",
-    "updatedAt": "2023-10-18T12:02:00Z"
+    "email": "contact@promaxauto.com"
   }
 ]

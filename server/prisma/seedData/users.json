@@ -1,14 +1,9 @@
 [
   {
-    "userId": 1,
-    "username": "Michael Cheng",
+    "username": "admin",
+    "fullName": "Michael Cheng",
     "password": "12341234",
-    "role": "admin"
-  },
-  {
-    "userId": 2,
-    "username": "Ethan Loh",
-    "password": "12341234",
-    "role": "agent"
+    "role": "admin",
+    "email": "mikeypeter37@gmail.com"
   }
 ]
