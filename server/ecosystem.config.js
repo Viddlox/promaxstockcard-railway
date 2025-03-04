@@ -3,9 +3,11 @@ module.exports = {
 		{
 			name: "promax-stockcard",
 			script: "npm",
+			args: "start",
 			env: {
-				NODE_ENV: "development",
-				ENV_VAR1: "environment-variable"
+				NODE_ENV: "production",
+				PORT: 3000,
+				JWT_SECRET: process.env.JWT_SECRET,
 			},
 		},
 	],
