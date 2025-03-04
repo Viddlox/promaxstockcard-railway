@@ -1,5 +1,3 @@
-import { PrismaClient } from "@prisma/client";
-
 import { HttpError } from "../../utils/http.js";
 import { getLimitAndCursor } from "../../utils/query.js";
 import {
@@ -8,6 +6,7 @@ import {
 } from "../../utils/orderCalculation.js";
 
 import { patchInventoryParts } from "../inventory/services.js";
+import { prisma } from "../../../prisma/prisma.js";
 // import {
 //   postCreateSalesSummary,
 //   postCreateTopProductsSummary,

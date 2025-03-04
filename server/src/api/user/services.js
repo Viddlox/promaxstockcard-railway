@@ -1,10 +1,15 @@
-import { PrismaClient } from "@prisma/client";
-import { HttpError } from "../../utils/http.js";
-import { getLimitAndCursor } from "../../utils/query.js";
 import crypto from "crypto";
 import { promisify } from "util";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+const { verify, decode } = jwt;
 
-const prisma = new PrismaClient();
+import { prisma } from "../../../prisma/prisma.js";
+import { HttpError } from "../../utils/http.js";
+import { getLimitAndCursor } from "../../utils/query.js";
+import { generateAccessToken, generateRefreshToken } from "../../utils/user.js";
+import { jwtSecret } from "../../config/variables.js";
+
 const randomBytesAsync = promisify(crypto.randomBytes);
 
 export const getUsers = async ({ limit, cursor, role = "", search = "" }) => {
@@ -72,10 +77,7 @@ export const createUser = async ({ email = "", fullName, role }) => {
   }
 
   const rawPassword = (await randomBytesAsync(6)).toString("hex");
-  const hashedPassword = crypto
-    .createHash("sha256")
-    .update(rawPassword)
-    .digest("hex");
+  const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
   const newUser = await prisma.users.create({
     data: {
@@ -102,4 +104,168 @@ export const deleteUser = async ({ userIds = [] }) => {
       },
     },
   });
+};
+
+export const signIn = async ({ username, password, refreshToken }) => {
+  const oldRefreshToken = refreshToken;
+  const parsedUsername = username.toLowerCase().trim();
+  const parsedPassword = password.trim();
+
+  if (!parsedUsername) {
+    throw new HttpError(400, "Username is required");
+  }
+
+  const user = await prisma.users.findFirst({
+    where: { username: { contains: username, mode: "insensitive" } },
+    select: {
+      userId: true,
+      password: true,
+      refreshTokens: true,
+    },
+  });
+
+  if (!user) {
+    throw new HttpError(401, "There are no users with these credentials");
+  }
+
+  const matched = await bcrypt.compare(parsedPassword, user.password);
+
+  if (!matched) {
+    throw new HttpError(401, "There are no users with these credentials");
+  }
+
+  // Generate new access and refresh tokens
+  const accessToken = generateAccessToken(user.userId);
+  const newRefreshToken = generateRefreshToken(user.userId);
+
+  let refreshTokenData = !oldRefreshToken
+    ? user.refreshTokens || []
+    : user.refreshTokens.filter((token) => token !== oldRefreshToken);
+
+  if (oldRefreshToken) {
+    const foundToken = await prisma.users.findFirst({
+      where: { refreshTokens: { has: oldRefreshToken } },
+    });
+
+    // If token was reused (not found in DB), remove all stored tokens
+    if (!foundToken) {
+      refreshTokenData = [];
+    }
+  }
+
+  // Append the new refresh token
+  refreshTokenData = [...refreshTokenData, newRefreshToken];
+
+  // Update user's refresh tokens in database
+  await prisma.users.update({
+    where: { userId: user.userId },
+    data: { refreshTokens: refreshTokenData },
+  });
+
+  return {
+    id: user.userId,
+    accessToken,
+    refreshToken: newRefreshToken,
+  };
+};
+
+export const signOut = async ({ userId, refreshToken }) => {
+  const user = await prisma.users.findFirst({
+    where: { userId: userId },
+    select: { refreshTokens: true },
+  });
+
+  if (!user) {
+    throw new HttpError(404, "User not found");
+  }
+
+  // Remove the specified refresh token
+  const updatedTokens = user.refreshTokens.filter(
+    (token) => token !== refreshToken
+  );
+
+  // Update the database with the new refreshTokens array
+  await prisma.users.update({
+    where: { userId: userId },
+    data: { refreshTokens: updatedTokens },
+  });
+
+  return "Logout successful";
+};
+
+export const generateTokens = async ({ refreshToken }) => {
+  if (!refreshToken) {
+    throw new HttpError(400, "Require refreshToken");
+  }
+
+  // Check if refresh token exists in the database
+  const foundUser = await prisma.users.findFirst({
+    where: { refreshTokens: { has: refreshToken } },
+    select: { userId: true, refreshTokens: true },
+  });
+
+  // Detect reused token (token does not exist in DB)
+  if (!foundUser) {
+    try {
+      const decoded = verify(refreshToken, jwtSecret);
+
+      // If the token was valid but is not in the DB, assume token reuse and clear all refresh tokens for the user
+      await prisma.users.update({
+        where: { userId: decoded.id },
+        data: { refreshTokens: [] },
+      });
+    } catch (err) {
+      // Ignore errors here; we just clear tokens if the user exists
+    }
+    throw new HttpError(403, "Forbidden");
+  }
+
+  // Remove the used refresh token from the list
+  let validRefreshTokens = foundUser.refreshTokens.filter(
+    (token) => token !== refreshToken
+  );
+
+  try {
+    const decoded = verify(refreshToken, jwtSecret);
+
+    if (decoded.id !== foundUser.userId) {
+      throw new HttpError(403, "Forbidden");
+    }
+
+    // Generate new tokens
+    const newAccessToken = generateAccessToken(foundUser.userId);
+    const newRefreshToken = generateRefreshToken(foundUser.userId);
+
+    validRefreshTokens.push(newRefreshToken);
+
+    // Remove expired refresh tokens
+    const expiredRefreshTokens = foundUser.refreshTokens.filter((token) => {
+      const decodedToken = decode(token);
+      return decodedToken.exp < Date.now() / 1000;
+    });
+
+    if (expiredRefreshTokens.length) {
+      validRefreshTokens = validRefreshTokens.filter(
+        (token) => !expiredRefreshTokens.includes(token)
+      );
+    }
+
+    // Update user refresh tokens in DB
+    await prisma.users.update({
+      where: { userId: foundUser.userId },
+      data: { refreshTokens: validRefreshTokens },
+    });
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    };
+  } catch (err) {
+    // If verification fails, remove the used refresh token
+    await prisma.users.update({
+      where: { userId: foundUser.userId },
+      data: { refreshTokens: validRefreshTokens },
+    });
+    throw new HttpError(403, "Forbidden");
+  }
 };

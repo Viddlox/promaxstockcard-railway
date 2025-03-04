@@ -1,7 +1,7 @@
-const passport = require("passport");
-const passportJWT = require("passport-jwt");
-const { jwtSecret } = require("./variables");
-const { PrismaClient } = require("@prisma/client");
+import passport from "passport";
+import passportJWT from "passport-jwt";
+import { prisma } from "../../prisma/prisma.js";
+import { jwtSecret } from "./variables.js";
 
 const { ExtractJwt, Strategy: JwtStrategy } = passportJWT;
 
@@ -10,17 +10,11 @@ const jwtOptions = {
   secretOrKey: jwtSecret,
 };
 
-passport.serializeUser(function (user, done) {
-  done(null, user);
-});
-
-passport.deserializeUser(function (obj, done) {
-  done(null, obj);
-});
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
 
 const strategy = new JwtStrategy(jwtOptions, async (jwtPayload, next) => {
   try {
-    const prisma = new PrismaClient();
     const userId = jwtPayload?.userId;
     const user = await prisma.users.findFirst({ where: { userId } });
 
@@ -38,4 +32,4 @@ const strategy = new JwtStrategy(jwtOptions, async (jwtPayload, next) => {
 
 passport.use("jwt", strategy);
 
-module.exports = passport;
+export { passport, jwtOptions };

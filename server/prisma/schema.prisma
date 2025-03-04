@@ -67,6 +67,7 @@ model Users {
   email     String?
   orders    Orders[]
   fullName  String
+  refreshTokens Json?    @default("[]") // Store refresh tokens as an array in JSON format
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 

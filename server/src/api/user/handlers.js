@@ -1,4 +1,11 @@
-import { getUsers, createUser, deleteUser } from "./services.js";
+import {
+  getUsers,
+  createUser,
+  deleteUser,
+  signIn,
+  signOut,
+  generateTokens,
+} from "./services.js";
 import {
   HttpError,
   formatErrorResponse,
@@ -54,5 +61,52 @@ export const handleDeleteUsers = async (req, res) => {
       return res.status(e.status).json(formatErrorResponse(e.message));
     }
     return res.status(500).json(formatErrorResponse(`Error deleting users`));
+  }
+};
+
+export const handleSignIn = async (req, res) => {
+  try {
+    const { username, password, refreshToken } = req.body;
+    const data = await signIn({ username, password, refreshToken });
+
+    return res.status(200).json({ data });
+  } catch (e) {
+    console.log(e);
+    if (e instanceof HttpError) {
+      return res.status(e.status).json(formatErrorResponse(e.message));
+    }
+    return res.status(500).json(formatErrorResponse("Error signing in"));
+  }
+};
+
+export const handleSignOut = async (req, res) => {
+  try {
+    const { userId, refreshToken } = req.body;
+    const data = await signOut({ userId, refreshToken });
+
+    return res.status(200).json({ data });
+  } catch (e) {
+    console.log(e);
+    if (e instanceof HttpError) {
+      return res.status(e.status).json(formatErrorResponse(e.message));
+    }
+    return res.status(500).json(formatErrorResponse("Error signing out"));
+  }
+};
+
+export const generateTokensHandler = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    const data = await generateTokens({ refreshToken });
+
+    return res.status(200).json({ data });
+  } catch (e) {
+    console.log(e);
+    if (e instanceof HttpError) {
+      return res.status(e.status).json(formatErrorResponse(e.message));
+    }
+    return res
+      .status(500)
+      .json(formatErrorResponse("Problem generating tokens"));
   }
 };

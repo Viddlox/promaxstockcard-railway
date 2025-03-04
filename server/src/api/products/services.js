@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import { HttpError } from "../../utils/http.js";
 import { getLimitAndCursor } from "../../utils/query.js";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../config/variables.js";
 
 export const getProducts = async ({ limit, cursor, search = "" }) => {
   const { limitQuery, cursorQuery } = getLimitAndCursor({ limit, cursor });
