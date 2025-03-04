@@ -1,7 +1,64 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { setAccessToken, setRefreshToken, logoutUser, setUsedToken } from "./index.js";
+
+const baseQuery = fetchBaseQuery({
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+  prepareHeaders: (headers, { getState }) => {
+    const token = getState().global.accessToken;
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+    return headers;
+  },
+});
+
+const baseQueryWithReauth = async (args, api, extraOptions) => {
+  let result = await baseQuery(args, api, extraOptions);
+
+  const refreshToken = api.getState().global.refreshToken;
+  const accessToken = api.getState().global.accessToken;
+
+  // If request is unauthorized (401), try refreshing the token
+  if (result.error && result.error.status === 401) {
+    if (!refreshToken || !accessToken) {
+      console.log("No refresh token available, logging out...");
+      return result;
+    }
+
+    console.log("Storing used token and attempting to refresh...");
+
+    // Store the last used access token before refreshing (new step)
+    api.dispatch(setUsedToken(accessToken));
+
+    // Attempt to refresh the token
+    const refreshResult = await baseQuery(
+      {
+        url: "/user/token",
+        method: "POST",
+        body: { refreshToken },
+      },
+      api,
+      extraOptions
+    );
+
+    if (refreshResult.data) {
+      // Store the new tokens
+      api.dispatch(setAccessToken(refreshResult.data.accessToken));
+      api.dispatch(setRefreshToken(refreshResult.data.refreshToken));
+
+      // Retry the original request with new token
+      result = await baseQuery(args, api, extraOptions);
+    } else {
+      console.log("Refresh token failed, logging out...");
+      api.dispatch(logoutUser());
+    }
+  }
+
+  return result;
+};
 
 export const api = createApi({
-  baseQuery: fetchBaseQuery({ baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL }),
+  baseQuery: baseQueryWithReauth, // Use the wrapped base query
   reducerPath: "api",
   tagTypes: ["Inventory", "Dashboard", "Products", "Orders", "Customers"],
   endpoints: (build) => ({
