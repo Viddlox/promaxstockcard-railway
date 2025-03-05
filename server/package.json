@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed": "node prisma/seed.js",
-    "build": "npx prisma generate",
-    "start": "node src/index.js",
+    "migrate": "npx prisma migrate deploy",
+    "start": "npm run migrate && npm run seed && node src/index.js",
     "dev": "nodemon src/index.js"
   },
   "keywords": [],
