@@ -8,7 +8,8 @@
     "seed": "node prisma/seed.js",
     "migrate": "npx prisma migrate deploy",
     "build": "echo 'No build step required'",
-    "start": "npm run migrate && npm run seed && node src/index.js",
+    "prestart": "npm run migrate && npm run seed",
+    "start": "node src/index.js",
     "dev": "nodemon src/index.js"
   },
   "keywords": [],
