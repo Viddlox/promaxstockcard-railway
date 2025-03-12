@@ -3,7 +3,21 @@
     "username": "admin",
     "fullName": "Michael Cheng",
     "password": "Xv9@pL3#Zq7!NtK8",
-    "role": "admin",
+    "role": "ADMIN",
     "email": "mikeypeter37@gmail.com"
+  },
+  {
+    "username": "agent",
+    "fullName": "John Doe",
+    "password": "password",
+    "role": "AGENT",
+    "email": "john.doe@example.com"
+  },
+  {
+    "username": "worker",
+    "fullName": "Jane Smith",
+    "password": "password",
+    "role": "WORKER",
+    "email": "jane.smith@example.com"
   }
 ]

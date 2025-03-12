@@ -1,5 +1,9 @@
 import { deleteOrders, getOrders, postCreateOrder } from "./services.js";
-import { HttpError, formatResponse, formatErrorResponse } from "../../utils/http.js";
+import {
+  HttpError,
+  formatResponse,
+  formatErrorResponse,
+} from "../../utils/http.js";
 
 export const handleGetOrders = async (req, res) => {
   try {
@@ -24,16 +28,10 @@ export const handleGetOrders = async (req, res) => {
 
 export const handlePostCreateOrder = async (req, res) => {
   try {
-    const {
-      orderType,
-      orderItems,
-      agentId,
-      customerId,
-      paymentMethod,
-      notes,
-    } = req.body;
+    const { orderType, orderItems, agentId, customerId, paymentMethod, notes } =
+      req.body;
 
-    const { orderData, invoiceData, inventoryData } = await postCreateOrder({
+    await postCreateOrder({
       orderType,
       orderItems,
       agentId,
@@ -42,7 +40,7 @@ export const handlePostCreateOrder = async (req, res) => {
       notes,
     });
 
-    return res.status(200).json({ orderData, invoiceData, inventoryData });
+    return res.status(200).json({ message: "Order created successfully" });
   } catch (e) {
     if (e instanceof HttpError) {
       return res.status(e.status).json(formatErrorResponse(e.message));
@@ -58,13 +56,13 @@ export const handleDeleteOrders = async (req, res) => {
 
     await deleteOrders({ orderIds });
 
-    return res.status(200).json({ message: `${orderIds} successfully deleted` });
+    return res
+      .status(200)
+      .json({ message: `${orderIds} successfully deleted` });
   } catch (e) {
     if (e instanceof HttpError) {
       return res.status(e.status).json(formatErrorResponse(e.message));
     }
-    return res
-      .status(500)
-      .json(formatErrorResponse("Error deleting orders"));
+    return res.status(500).json(formatErrorResponse("Error deleting orders"));
   }
 };

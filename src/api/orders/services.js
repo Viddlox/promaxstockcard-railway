@@ -6,6 +6,7 @@ import {
 } from "../../utils/orderCalculation.js";
 
 import { patchInventoryParts } from "../inventory/services.js";
+import { patchProducts } from "../products/services.js";
 import { prisma } from "../../../prisma/prisma.js";
 // import {
 //   postCreateSalesSummary,
@@ -94,147 +95,246 @@ export const postCreateOrder = async ({
   paymentMethod = null,
   notes = "",
 }) => {
-  let newOrder = null;
-  let updatedParts = null;
+  try {
+    if (
+      !orderType ||
+      !orderItems ||
+      !agentId ||
+      (orderType === "SALE" && !(paymentMethod || customerId))
+    ) {
+      throw new HttpError(400, "Missing required fields");
+    }
 
-  if (
-    !orderType ||
-    !orderItems ||
-    !agentId ||
-    (orderType === "SALE" && !(paymentMethod || customerId))
-  ) {
-    throw new HttpError(400, "Missing required fields");
-  }
+    let agent;
+    try {
+      agent = await prisma.users.findUnique({
+        where: {
+          userId: agentId,
+        },
+      });
+      if (!agent) {
+        throw new HttpError(404, "Agent not found");
+      }
+    } catch (error) {
+      throw new HttpError(500, "Failed to fetch agent");
+    }
 
-  let setType = "ABC";
-  let totalAmount = 0;
-  let parsedOrderItems = JSON.parse(orderItems);
-  let bomChanges = [];
+    let customer;
+    if (customerId) {
+      try {
+        customer = await prisma.customers.findUnique({
+          where: {
+            customerId,
+          },
+        });
+      } catch (error) {
+        throw new HttpError(500, "Failed to fetch customer");
+      }
+    }
 
-  if (
-    orderType === "SALE" &&
-    parsedOrderItems &&
-    Array.isArray(parsedOrderItems)
-  ) {
-    const aggregatedItems = parsedOrderItems.reduce(
-      (acc, item) => {
-        const { productId, partId, quantity, bom } = item;
+    let totalAmount = 0;
+    let parsedOrderItems;
 
-        if (productId) {
-          acc.products[productId] =
-            (acc.products[productId] || 0) + parseInt(quantity);
+    try {
+      parsedOrderItems = JSON.parse(orderItems);
+    } catch (error) {
+      console.error("Failed to parse orderItems:", error);
+      throw new HttpError(400, "Invalid orderItems JSON format");
+    }
 
-          if (bom && Array.isArray(bom)) {
-            bom.forEach((bomItem) => {
-              const { partId: bomPartId, quantity: bomQuantity } = bomItem;
-              acc.parts[bomPartId] = (acc.parts[bomPartId] || 0) + bomQuantity;
-            });
+    let bomChanges = [];
+
+    if (
+      orderType === "SALE" &&
+      parsedOrderItems &&
+      Array.isArray(parsedOrderItems)
+    ) {
+      const aggregatedItems = parsedOrderItems.reduce(
+        (acc, item) => {
+          const { productId, partId, quantity, bom } = item;
+
+          if (productId) {
+            acc.products[productId] =
+              (acc.products[productId] || 0) + parseInt(quantity);
+
+            if (bom && Array.isArray(bom)) {
+              bom.forEach((bomItem) => {
+                const { partId: bomPartId, quantity: bomQuantity } = bomItem;
+                if (!bomPartId || !bomQuantity) {
+                  console.error("Invalid BOM item:", bomItem);
+                  throw new HttpError(400, "Invalid BOM item format");
+                }
+                acc.parts[bomPartId] =
+                  (acc.parts[bomPartId] || 0) + bomQuantity;
+              });
+            }
+          } else if (partId) {
+            acc.parts[partId] = (acc.parts[partId] || 0) + parseInt(quantity);
           }
-        } else if (partId) {
-          acc.parts[partId] = (acc.parts[partId] || 0) + parseInt(quantity);
+
+          return acc;
+        },
+        { products: {}, parts: {} }
+      );
+
+      const productIds = Object.keys(aggregatedItems.products);
+      const partIds = Object.keys(aggregatedItems.parts);
+
+      let products, inventoryParts;
+      try {
+        [products, inventoryParts] = await Promise.all([
+          prisma.products.findMany({
+            where: { productId: { in: productIds } },
+            select: { productId: true, bom: true, basePrice: true },
+          }),
+          prisma.inventory.findMany({
+            where: { partId: { in: partIds } },
+            select: { partId: true, partPrice: true },
+          }),
+        ]);
+      } catch (error) {
+        console.error("Database query failed:", error);
+        throw new HttpError(500, "Failed to fetch products or inventory data");
+      }
+
+      const productMap = Object.fromEntries(
+        products.map((p) => [p.productId, p])
+      );
+      const partMap = Object.fromEntries(
+        inventoryParts.map((p) => [p.partId, p.partPrice])
+      );
+
+      const totalPriceChangesArr = await Promise.all(
+        parsedOrderItems.map(async (orderItem) => {
+          const { productId, partId, bom: orderBom, quantity } = orderItem;
+
+          if (productId) {
+            const product = productMap[productId];
+            if (!product) {
+              console.error("Product not found:", productId);
+              throw new HttpError(404, `Product ${productId} not found`);
+            }
+            const backendBom = product.bom;
+            const productBomChanges = sumBomChanges(backendBom, orderBom || []);
+
+            bomChanges.push(...productBomChanges);
+
+            const calculatedCosts = await calculateTotalCost(
+              productBomChanges,
+              partMap
+            );
+
+            return product.basePrice * parseInt(quantity) + calculatedCosts;
+          } else if (partId) {
+            const partPrice = partMap[partId];
+            if (!partPrice) {
+              console.error("Part not found:", partId);
+              throw new HttpError(404, `Part ${partId} not found`);
+            }
+            return partPrice * parseInt(quantity);
+          }
+        })
+      );
+
+      totalAmount = totalPriceChangesArr.reduce((sum, price) => sum + price, 0);
+
+      const partsArray = Object.keys(aggregatedItems.parts).map((key) => {
+        return { partId: key, quantity: aggregatedItems.parts[key] };
+      });
+
+      try {
+        await patchInventoryParts({
+          inventoryParts: partsArray,
+          isSale: true,
+        });
+      } catch (error) {
+        console.error("Failed to update inventory:", error);
+        throw new HttpError(500, "Failed to update inventory");
+      }
+
+      const productsArray = Object.keys(aggregatedItems.products).map((key) => {
+        return { productId: key, quantity: aggregatedItems.products[key] };
+      });
+
+      try {
+        await patchProducts({
+          products: productsArray,
+          isSale: true,
+        });
+      } catch (error) {
+        console.error("Failed to update products:", error);
+        throw new HttpError(500, "Failed to update products");
+      }
+
+      try {
+        newOrder = await prisma.orders.create({
+          data: {
+            orderType,
+            orderItems: parsedOrderItems,
+            agentId,
+            customerId,
+            customerName: customer.companyName,
+            paymentMethod,
+            totalAmount,
+            notes,
+            agentName: agent.fullName,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to create order:", error);
+        throw new HttpError(500, "Failed to create order in database");
+      }
+    } else if (
+      orderType === "STOCK" &&
+      parsedOrderItems &&
+      Array.isArray(parsedOrderItems)
+    ) {
+      // Process each item sequentially
+      for (const item of parsedOrderItems) {
+        if (item.productId) {
+          try {
+            await patchProducts({
+              products: [
+                { productId: item.productId, quantity: item.quantity },
+              ],
+            });
+          } catch (error) {
+            console.error("Failed to update products:", error);
+            throw new HttpError(500, "Failed to update products");
+          }
+        } else if (item.partId) {
+          try {
+            await patchInventoryParts({
+              inventoryParts: [
+                { partId: item.partId, quantity: item.quantity },
+              ],
+            });
+          } catch (error) {
+            console.error("Failed to update inventory:", error);
+            throw new HttpError(500, "Failed to update inventory");
+          }
         }
+      }
 
-        return acc;
-      },
-      { products: {}, parts: {} }
-    );
-
-    const productIds = Object.keys(aggregatedItems.products);
-    const partIds = Object.keys(aggregatedItems.parts);
-
-    const [products, inventoryParts] = await Promise.all([
-      prisma.products.findMany({
-        where: { productId: { in: productIds } },
-        select: { productId: true, bom: true, basePrice: true },
-      }),
-      prisma.inventory.findMany({
-        where: { partId: { in: partIds } },
-        select: { partId: true, partPrice: true },
-      }),
-    ]);
-
-    const productMap = Object.fromEntries(
-      products.map((p) => [p.productId, p])
-    );
-    const partMap = Object.fromEntries(
-      inventoryParts.map((p) => [p.partId, p.partPrice])
-    );
-
-    const totalPriceChangesArr = await Promise.all(
-      parsedOrderItems.map(async (orderItem) => {
-        const { productId, partId, bom: orderBom, quantity } = orderItem;
-
-        if (productId) {
-          const product = productMap[productId];
-          if (!product)
-            throw new HttpError(404, `Product ${productId} not found`);
-
-          const backendBom = product.bom;
-          const productBomChanges = sumBomChanges(backendBom, orderBom || []);
-
-          bomChanges.push(...productBomChanges);
-
-          const calculatedCosts = await calculateTotalCost(
-            productBomChanges,
-            partMap
-          );
-          return product.basePrice * parseInt(quantity) + calculatedCosts;
-        } else if (partId) {
-          const partPrice = partMap[partId];
-          if (!partPrice) throw new HttpError(404, `Part ${partId} not found`);
-          return partPrice * parseInt(quantity);
-        }
-      })
-    );
-
-    totalAmount = totalPriceChangesArr.reduce((sum, price) => sum + price, 0);
-
-    const partsArray = Object.keys(aggregatedItems.parts).map((key) => {
-      return { partId: key, quantity: aggregatedItems.parts[key] };
-    });
-
-    await patchInventoryParts({
-      inventoryParts: partsArray,
-      isSale: true,
-    });
-
-    newOrder = await prisma.orders.create({
-      data: {
-        orderType,
-        orderItems: parsedOrderItems,
-        agentId,
-        customerId,
-        paymentMethod,
-        totalAmount,
-        setType,
-        notes,
-      },
-    });
-    // await postCreateSalesSummary();
-  } else if (
-    orderType === "STOCK" &&
-    parsedOrderItems &&
-    Array.isArray(parsedOrderItems)
-  ) {
-    updatedParts = await patchInventoryParts({
-      inventoryParts: parsedOrderItems,
-    });
-    newOrder = await prisma.orders.create({
-      data: {
-        orderType,
-        orderItems: parsedOrderItems,
-        agentId,
-        notes,
-      },
-    });
+      try {
+        newOrder = await prisma.orders.create({
+          data: {
+            orderType,
+            orderItems: parsedOrderItems,
+            agentId,
+            notes,
+            agentName: agent.fullName,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to create stock order:", error);
+        throw new HttpError(500, "Failed to create stock order in database");
+      }
+    }
+  } catch (error) {
+    console.error("Order creation failed:", error);
+    throw error;
   }
-
-  // await postCreateTopProductsSummary();
-
-  return {
-    orderData: newOrder,
-    inventoryData: updatedParts,
-  };
 };
 
 export const deleteOrders = async ({ orderIds = [] }) => {

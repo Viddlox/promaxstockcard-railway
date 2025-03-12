@@ -104,7 +104,7 @@ export const patchInventoryParts = async ({
       inventoryParts.map(async ({ partId, quantity }) => {
         const currentPart = await prisma.inventory.findUnique({
           where: { partId },
-          select: { partQuantity: true },
+          select: { partQuantity: true, partName: true },
         });
 
         if (!currentPart) {
@@ -115,6 +115,13 @@ export const patchInventoryParts = async ({
           currentPart.partQuantity +
           (isSale ? -parseInt(quantity) : parseInt(quantity));
 
+        if (updatedQuantity < 0) {
+          throw new HttpError(
+            400,
+            `Insufficient quantity for part ${partId} (${currentPart.partName}). Available: ${currentPart.partQuantity}, Requested: ${quantity}`
+          );
+        }
+
         const updatedPart = await prisma.inventory.update({
           where: { partId },
           data: { partQuantity: updatedQuantity },
@@ -122,10 +129,54 @@ export const patchInventoryParts = async ({
         return updatedPart;
       })
     );
-    // await postCreateInventorySummary()
 
     return updatedParts;
   } catch (error) {
+    if (error instanceof HttpError) {
+      throw error;
+    }
     throw new HttpError(500, "Failed to update inventory parts");
   }
+};
+
+export const patchInventoryPart = async ({
+  partId,
+  partName,
+  partPrice,
+  partQuantity,
+  partUoM,
+}) => {
+  if (
+    !partId ||
+    !partName ||
+    !partPrice ||
+    partQuantity === undefined ||
+    !partUoM
+  ) {
+    throw new HttpError(400, "Missing required fields");
+  }
+
+  if (partQuantity < 0) {
+    throw new HttpError(400, "Quantity cannot be negative");
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    const existingPart = await tx.inventory.findUnique({
+      where: { partId },
+    });
+
+    if (!existingPart) {
+      throw new HttpError(404, "Part not found");
+    }
+
+    await tx.inventory.update({
+      where: { partId },
+      data: { partName, partPrice, partQuantity, partUoM },
+    });
+
+    return {
+      message: "Part updated successfully",
+      partId,
+    };
+  });
 };

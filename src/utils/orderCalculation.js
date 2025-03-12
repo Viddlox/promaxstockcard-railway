@@ -42,33 +42,3 @@ export const sumBomChanges = (backendBom, orderBom) => {
 
   return bomChanges;
 };
-
-export const determineSetType = (aggregatedItems, parsedOrderItems, productMap) => {
-  let setType = "ABC";
-
-  const hasMultipleProducts = Object.keys(aggregatedItems.products).length > 1;
-  const hasDuplicateProducts = Object.values(aggregatedItems.products).some(quantity => quantity > 1);
-  
-  // Check if any product has a modified BOM
-  const hasModifiedProductBOM = parsedOrderItems.some(item => {
-    const { productId, bom: orderBom } = item;
-    
-    if (productId && productMap[productId]) {
-      const backendBom = productMap[productId].bom || [];
-      const bomChanges = sumBomChanges(backendBom, orderBom || []);
-      
-      return bomChanges.length > 0;  // If BOM changes exist, it's modified
-    }
-
-    return false;
-  });
-
-  // Decide setType based on products and parts
-  if (hasMultipleProducts || hasDuplicateProducts || aggregatedItems.partsOnly) {
-    setType = "C";
-  } else if (hasModifiedProductBOM) {
-    setType = "A";
-  }
-
-  return setType;
-};

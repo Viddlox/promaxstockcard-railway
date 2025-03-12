@@ -2,6 +2,7 @@ import {
   postCreateInventoryPart,
   getInventory,
   deleteInventoryParts,
+  patchInventoryPart,
 } from "./services.js";
 
 import {
@@ -69,5 +70,30 @@ export const handleDeleteInventoryParts = async (req, res) => {
     return res
       .status(500)
       .json(formatErrorResponse("Error deleting inventory parts"));
+  }
+};
+
+export const handlePatchInventoryPart = async (req, res) => {
+  try {
+    const { partId, newPartId, partName, partPrice, partQuantity, partUoM } =
+      req.body;
+
+    const data = await patchInventoryPart({
+      partId,
+      newPartId,
+      partName,
+      partPrice,
+      partQuantity,
+      partUoM,
+    });
+
+    return res.status(200).json({ data });
+  } catch (e) {
+    if (e instanceof HttpError) {
+      return res.status(e.status).json(formatErrorResponse(e.message));
+    }
+    return res
+      .status(500)
+      .json(formatErrorResponse("Error updating inventory part"));
   }
 };

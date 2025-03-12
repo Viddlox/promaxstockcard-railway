@@ -119,9 +119,10 @@ export const signIn = async ({ username, password, refreshToken }) => {
     where: { username: { contains: username, mode: "insensitive" } },
     select: {
       userId: true,
+      fullName: true,
       password: true,
       refreshTokens: true,
-      role: true
+      role: true,
     },
   });
 
@@ -168,6 +169,7 @@ export const signIn = async ({ username, password, refreshToken }) => {
     accessToken,
     refreshToken: newRefreshToken,
     userRole: user.role,
+    fullName: user.fullName,
   };
 };
 
@@ -270,4 +272,23 @@ export const generateTokens = async ({ refreshToken }) => {
     });
     throw new HttpError(403, "Forbidden");
   }
+};
+
+export const patchUser = async ({ userId, email, fullName, role }) => {
+  if (!userId || !fullName || !role) {
+    throw new HttpError(400, "Missing required fields");
+  }
+
+  const user = await prisma.users.findUnique({ where: { userId } });
+
+  if (!user) {
+    throw new HttpError(404, "User not found");
+  }
+
+  const updatedUser = await prisma.users.update({
+    where: { userId },
+    data: { fullName, role, email },
+  });
+
+  return updatedUser;
 };

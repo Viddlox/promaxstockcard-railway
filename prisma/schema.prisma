@@ -13,12 +13,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UoM {
-  PCS
-  PACK
-  UNIT
-}
-
 enum PaymentMethod {
   COD
   TRANSFER
@@ -29,17 +23,17 @@ enum OrderType {
   SALE
 }
 
-enum SetType {
-  ABC
-  A
-  C
+enum Role {
+  ADMIN
+  AGENT
+  WORKER
 }
 
 model Products {
   productId   String   @id
   productName String   @unique
   basePrice   Decimal
-  quantity    Int
+  quantity    Int      @default(0)
   bom         Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
@@ -51,8 +45,8 @@ model Inventory {
   partId       String   @id
   partName     String
   partPrice    Decimal
-  partQuantity Int
-  partUoM      UoM
+  partQuantity Int      @default(0)
+  partUoM      String   @default("UNIT")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
 
@@ -60,16 +54,16 @@ model Inventory {
 }
 
 model Users {
-  userId    String   @id @default(uuid())
-  username  String   @unique
-  password  String
-  role      String
-  email     String?
-  orders    Orders[]
-  fullName  String
-  refreshTokens Json?    @default("[]") // Store refresh tokens as an array in JSON format
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  userId        String   @id @default(uuid())
+  username      String   @unique
+  password      String
+  role          Role     @default(WORKER)
+  email         String?
+  orders        Orders[]
+  fullName      String
+  refreshTokens Json?    @default("[]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
   @@index([username])
 }
@@ -95,10 +89,11 @@ model Orders {
   orderType     OrderType
   orderItems    Json
   agentId       String
+  agentName     String         @default("Unknown")
   customerId    String?
+  customerName  String         @default("Unknown")
   paymentMethod PaymentMethod?
   totalAmount   Decimal?
-  setType       SetType?
   notes         String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now()) @updatedAt

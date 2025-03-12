@@ -3,7 +3,7 @@
     "productId": "D712-MDL",
     "productName": "MODEL-712 - DNOR DC-24V ARM MOTOR",
     "basePrice": 625,
-    "quantity": 0,
+    "quantity": 100,
     "bom": [
       {
         "partId": "D712-BOM-BOX-DNOR-NEW",
@@ -65,7 +65,7 @@
     "productId": "4STT-MDL",
     "productName": "MODEL-212 - DNOR DC-24V ARM MOTOR",
     "basePrice": 650,
-    "quantity": 0,
+    "quantity": 100,
     "bom": [
       {
         "partId": "4STT-BOM-BOX-DNOR",
