@@ -5,12 +5,13 @@ import {
   handlePostCreateInventoryPart,
   handlePatchInventoryPart,
 } from "./handlers.js";
+import { authorizeRole } from "../../middleware/index.js";
 
 const router = Router();
 
-router.get("/", handleGetInventory);
-router.post("/create", handlePostCreateInventoryPart);
-router.delete("/delete", handleDeleteInventoryParts);
-router.patch("/update", handlePatchInventoryPart);
+router.get("/", authorizeRole(["ADMIN", "AGENT"]), handleGetInventory);
+router.post("/create", authorizeRole(["ADMIN"]), handlePostCreateInventoryPart);
+router.delete("/delete", authorizeRole(["ADMIN"]), handleDeleteInventoryParts);
+router.patch("/update", authorizeRole(["ADMIN"]), handlePatchInventoryPart);
 
 export { router as inventoryRoutes };

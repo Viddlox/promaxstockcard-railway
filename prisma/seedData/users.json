@@ -19,5 +19,428 @@
     "password": "password",
     "role": "WORKER",
     "email": "jane.smith@example.com"
+  },
+
+  {
+    "username": "admin1",
+    "fullName": "Alice Johnson",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "alice.johnson@example.com"
+  },
+  {
+    "username": "admin2",
+    "fullName": "Bob Williams",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "bob.williams@example.com"
+  },
+  {
+    "username": "admin3",
+    "fullName": "Charlie Brown",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "charlie.brown@example.com"
+  },
+  {
+    "username": "admin4",
+    "fullName": "David Smith",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "david.smith@example.com"
+  },
+  {
+    "username": "admin5",
+    "fullName": "Emma Wilson",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "emma.wilson@example.com"
+  },
+  {
+    "username": "admin6",
+    "fullName": "Frank Miller",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "frank.miller@example.com"
+  },
+  {
+    "username": "admin7",
+    "fullName": "Grace Davis",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "grace.davis@example.com"
+  },
+  {
+    "username": "admin8",
+    "fullName": "Henry White",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "henry.white@example.com"
+  },
+  {
+    "username": "admin9",
+    "fullName": "Ivy Thomas",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "ivy.thomas@example.com"
+  },
+  {
+    "username": "admin10",
+    "fullName": "Jack Harris",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "jack.harris@example.com"
+  },
+  {
+    "username": "admin11",
+    "fullName": "Katherine Lee",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "katherine.lee@example.com"
+  },
+  {
+    "username": "admin12",
+    "fullName": "Lucas Anderson",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "lucas.anderson@example.com"
+  },
+  {
+    "username": "admin13",
+    "fullName": "Mia Taylor",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "mia.taylor@example.com"
+  },
+  {
+    "username": "admin14",
+    "fullName": "Nathan Wright",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "nathan.wright@example.com"
+  },
+  {
+    "username": "admin15",
+    "fullName": "Olivia Martinez",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "olivia.martinez@example.com"
+  },
+  {
+    "username": "admin16",
+    "fullName": "Peter Thompson",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "peter.thompson@example.com"
+  },
+  {
+    "username": "admin17",
+    "fullName": "Quinn Garcia",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "quinn.garcia@example.com"
+  },
+  {
+    "username": "admin18",
+    "fullName": "Rachel Moore",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "rachel.moore@example.com"
+  },
+  {
+    "username": "admin19",
+    "fullName": "Samuel Rodriguez",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "samuel.rodriguez@example.com"
+  },
+  {
+    "username": "admin20",
+    "fullName": "Tiffany Chen",
+    "password": "password",
+    "role": "ADMIN",
+    "email": "tiffany.chen@example.com"
+  },
+
+  {
+    "username": "agent1",
+    "fullName": "Liam Clark",
+    "password": "password",
+    "role": "AGENT",
+    "email": "liam.clark@example.com"
+  },
+  {
+    "username": "agent2",
+    "fullName": "Olivia Lewis",
+    "password": "password",
+    "role": "AGENT",
+    "email": "olivia.lewis@example.com"
+  },
+  {
+    "username": "agent3",
+    "fullName": "Noah Walker",
+    "password": "password",
+    "role": "AGENT",
+    "email": "noah.walker@example.com"
+  },
+  {
+    "username": "agent4",
+    "fullName": "Sophia Hall",
+    "password": "password",
+    "role": "AGENT",
+    "email": "sophia.hall@example.com"
+  },
+  {
+    "username": "agent5",
+    "fullName": "Mason Young",
+    "password": "password",
+    "role": "AGENT",
+    "email": "mason.young@example.com"
+  },
+  {
+    "username": "agent6",
+    "fullName": "Ava King",
+    "password": "password",
+    "role": "AGENT",
+    "email": "ava.king@example.com"
+  },
+  {
+    "username": "agent7",
+    "fullName": "Ethan Wright",
+    "password": "password",
+    "role": "AGENT",
+    "email": "ethan.wright@example.com"
+  },
+  {
+    "username": "agent8",
+    "fullName": "Isabella Lopez",
+    "password": "password",
+    "role": "AGENT",
+    "email": "isabella.lopez@example.com"
+  },
+  {
+    "username": "agent9",
+    "fullName": "James Hill",
+    "password": "password",
+    "role": "AGENT",
+    "email": "james.hill@example.com"
+  },
+  {
+    "username": "agent10",
+    "fullName": "Mia Scott",
+    "password": "password",
+    "role": "AGENT",
+    "email": "mia.scott@example.com"
+  },
+  {
+    "username": "agent11",
+    "fullName": "Alexander Torres",
+    "password": "password",
+    "role": "AGENT",
+    "email": "alexander.torres@example.com"
+  },
+  {
+    "username": "agent12",
+    "fullName": "Charlotte Nguyen",
+    "password": "password",
+    "role": "AGENT",
+    "email": "charlotte.nguyen@example.com"
+  },
+  {
+    "username": "agent13",
+    "fullName": "Benjamin Flores",
+    "password": "password",
+    "role": "AGENT",
+    "email": "benjamin.flores@example.com"
+  },
+  {
+    "username": "agent14",
+    "fullName": "Amelia Green",
+    "password": "password",
+    "role": "AGENT",
+    "email": "amelia.green@example.com"
+  },
+  {
+    "username": "agent15",
+    "fullName": "Daniel Adams",
+    "password": "password",
+    "role": "AGENT",
+    "email": "daniel.adams@example.com"
+  },
+  {
+    "username": "agent16",
+    "fullName": "Harper Nelson",
+    "password": "password",
+    "role": "AGENT",
+    "email": "harper.nelson@example.com"
+  },
+  {
+    "username": "agent17",
+    "fullName": "Joseph Baker",
+    "password": "password",
+    "role": "AGENT",
+    "email": "joseph.baker@example.com"
+  },
+  {
+    "username": "agent18",
+    "fullName": "Evelyn Carter",
+    "password": "password",
+    "role": "AGENT",
+    "email": "evelyn.carter@example.com"
+  },
+  {
+    "username": "agent19",
+    "fullName": "Jackson Mitchell",
+    "password": "password",
+    "role": "AGENT",
+    "email": "jackson.mitchell@example.com"
+  },
+  {
+    "username": "agent20",
+    "fullName": "Abigail Turner",
+    "password": "password",
+    "role": "AGENT",
+    "email": "abigail.turner@example.com"
+  },
+
+  {
+    "username": "worker1",
+    "fullName": "Ethan Adams",
+    "password": "password",
+    "role": "WORKER",
+    "email": "ethan.adams@example.com"
+  },
+  {
+    "username": "worker2",
+    "fullName": "Isabella Nelson",
+    "password": "password",
+    "role": "WORKER",
+    "email": "isabella.nelson@example.com"
+  },
+  {
+    "username": "worker3",
+    "fullName": "James Carter",
+    "password": "password",
+    "role": "WORKER",
+    "email": "james.carter@example.com"
+  },
+  {
+    "username": "worker4",
+    "fullName": "Sophia Mitchell",
+    "password": "password",
+    "role": "WORKER",
+    "email": "sophia.mitchell@example.com"
+  },
+  {
+    "username": "worker5",
+    "fullName": "Lucas Roberts",
+    "password": "password",
+    "role": "WORKER",
+    "email": "lucas.roberts@example.com"
+  },
+  {
+    "username": "worker6",
+    "fullName": "Olivia Turner",
+    "password": "password",
+    "role": "WORKER",
+    "email": "olivia.turner@example.com"
+  },
+  {
+    "username": "worker7",
+    "fullName": "Mason Phillips",
+    "password": "password",
+    "role": "WORKER",
+    "email": "mason.phillips@example.com"
+  },
+  {
+    "username": "worker8",
+    "fullName": "Ava Campbell",
+    "password": "password",
+    "role": "WORKER",
+    "email": "ava.campbell@example.com"
+  },
+  {
+    "username": "worker9",
+    "fullName": "Ethan Parker",
+    "password": "password",
+    "role": "WORKER",
+    "email": "ethan.parker@example.com"
+  },
+  {
+    "username": "worker10",
+    "fullName": "Isabella Evans",
+    "password": "password",
+    "role": "WORKER",
+    "email": "isabella.evans@example.com"
+  },
+  {
+    "username": "worker11",
+    "fullName": "James Edwards",
+    "password": "password",
+    "role": "WORKER",
+    "email": "james.edwards@example.com"
+  },
+  {
+    "username": "worker12",
+    "fullName": "Sophia Collins",
+    "password": "password",
+    "role": "WORKER",
+    "email": "sophia.collins@example.com"
+  },
+  {
+    "username": "worker13",
+    "fullName": "Lucas Stewart",
+    "password": "password",
+    "role": "WORKER",
+    "email": "lucas.stewart@example.com"
+  },
+  {
+    "username": "worker14",
+    "fullName": "Olivia Morris",
+    "password": "password",
+    "role": "WORKER",
+    "email": "olivia.morris@example.com"
+  },
+  {
+    "username": "worker15",
+    "fullName": "Mason Murphy",
+    "password": "password",
+    "role": "WORKER",
+    "email": "mason.murphy@example.com"
+  },
+  {
+    "username": "worker16",
+    "fullName": "Ava Cook",
+    "password": "password",
+    "role": "WORKER",
+    "email": "ava.cook@example.com"
+  },
+  {
+    "username": "worker17",
+    "fullName": "Ethan Rogers",
+    "password": "password",
+    "role": "WORKER",
+    "email": "ethan.rogers@example.com"
+  },
+  {
+    "username": "worker18",
+    "fullName": "Isabella Gutierrez",
+    "password": "password",
+    "role": "WORKER",
+    "email": "isabella.gutierrez@example.com"
+  },
+  {
+    "username": "worker19",
+    "fullName": "James Ortiz",
+    "password": "password",
+    "role": "WORKER",
+    "email": "james.ortiz@example.com"
+  },
+  {
+    "username": "worker20",
+    "fullName": "Sophia Morgan",
+    "password": "password",
+    "role": "WORKER",
+    "email": "sophia.morgan@example.com"
   }
 ]

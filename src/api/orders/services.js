@@ -44,6 +44,19 @@ export const getOrders = async ({ limit, cursor, search }) => {
                 string_contains: search,
               },
             },
+            {
+              customerName: { contains: search, mode: "insensitive" },
+            },
+            {
+              agentName: { contains: search, mode: "insensitive" },
+            },
+            {
+              orderType:
+                search.toUpperCase() === "SALE" ||
+                search.toUpperCase() === "STOCK"
+                  ? search.toUpperCase()
+                  : undefined,
+            },
           ],
         }
       : {},
@@ -65,6 +78,19 @@ export const getOrders = async ({ limit, cursor, search }) => {
                 path: ["orderItems", "partId"],
                 string_contains: search,
               },
+            },
+            {
+              customerName: { contains: search, mode: "insensitive" },
+            },
+            {
+              agentName: { contains: search, mode: "insensitive" },
+            },
+            {
+              orderType:
+                search.toUpperCase() === "SALE" ||
+                search.toUpperCase() === "STOCK"
+                  ? search.toUpperCase()
+                  : undefined,
             },
           ],
         }

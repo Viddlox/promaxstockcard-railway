@@ -5,12 +5,13 @@ import {
   handleDeleteProducts,
   handlePatchProduct,
 } from "./handlers.js";
+import { authorizeRole } from "../../middleware/index.js";
 
 const router = Router();
 
-router.get("/", handleGetProducts);
-router.post("/create", handlePostCreateProduct);
-router.delete("/delete", handleDeleteProducts);
-router.patch("/update", handlePatchProduct);
+router.get("/", authorizeRole(["ADMIN", "AGENT"]), handleGetProducts);
+router.post("/create", authorizeRole(["ADMIN"]), handlePostCreateProduct);
+router.delete("/delete", authorizeRole(["ADMIN"]), handleDeleteProducts);
+router.patch("/update", authorizeRole(["ADMIN"]), handlePatchProduct);
 
 export { router as productRoutes };

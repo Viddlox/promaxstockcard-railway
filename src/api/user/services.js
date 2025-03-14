@@ -12,54 +12,77 @@ import { jwtSecret } from "../../config/variables.js";
 
 const randomBytesAsync = promisify(crypto.randomBytes);
 
-export const getUsers = async ({ limit, cursor, role = "", search = "" }) => {
+export const getUsers = async ({
+  limit,
+  cursor,
+  role = "AGENT",
+  search = "",
+}) => {
   const { limitQuery, cursorQuery } = getLimitAndCursor({ limit, cursor });
 
-  const parsedCursor = cursorQuery ? JSON.parse(cursorQuery) : null;
+  const parsedCursor = cursorQuery
+    ? JSON.parse(decodeURIComponent(cursorQuery))
+    : null;
 
-  const users = await prisma.users.findMany({
-    take: limitQuery,
-    skip: parsedCursor ? 1 : 0,
-    cursor: parsedCursor
-      ? {
-          updatedAt_userId: {
-            updatedAt: parsedCursor.updatedAt,
+  try {
+    const users = await prisma.users.findMany({
+      take: limitQuery,
+      skip: parsedCursor ? 1 : 0,
+      cursor: parsedCursor
+        ? {
             userId: parsedCursor.userId,
-          },
-        }
-      : undefined,
-    where: {
-      AND: [
-        role ? { role: role } : {},
-        search ? { username: { contains: search, mode: "insensitive" } } : {},
-      ],
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+          }
+        : undefined,
+      where: {
+        AND: [
+          role ? { role: role } : {},
+          search
+            ? {
+                OR: [
+                  { username: { contains: search, mode: "insensitive" } },
+                  { fullName: { contains: search, mode: "insensitive" } },
+                ],
+              }
+            : {},
+        ],
+      },
+      orderBy: [{ updatedAt: "desc" }, { userId: "asc" }],
+    });
 
-  const totalCount = await prisma.users.count({
-    where: {
-      AND: [
-        role ? { role: role } : {},
-        search ? { username: { contains: search, mode: "insensitive" } } : {},
-      ],
-    },
-  });
+    const totalCount = await prisma.users.count({
+      where: {
+        AND: [
+          role ? { role: role } : {},
+          search
+            ? {
+                OR: [
+                  { username: { contains: search, mode: "insensitive" } },
+                  { fullName: { contains: search, mode: "insensitive" } },
+                ],
+              }
+            : {},
+        ],
+      },
+    });
 
-  const nextCursor =
-    users.length === limitQuery
-      ? {
-          updatedAt: users[users.length - 1].updatedAt,
-          userId: users[users.length - 1].userId,
-        }
-      : null;
+    const nextCursor =
+      users.length === limitQuery
+        ? {
+            updatedAt: users[users.length - 1].updatedAt,
+            userId: users[users.length - 1].userId,
+          }
+        : null;
 
-  return {
-    data: users,
-    nextCursor,
-    total: totalCount,
-    hasNextPage: nextCursor !== null,
-  };
+    return {
+      data: users,
+      nextCursor,
+      total: totalCount,
+      hasNextPage: nextCursor !== null,
+    };
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    throw new HttpError(500, "Error fetching users");
+  }
 };
 
 export const createUser = async ({ email = "", fullName, role }) => {
@@ -108,17 +131,19 @@ export const deleteUser = async ({ userIds = [] }) => {
 
 export const signIn = async ({ username, password, refreshToken }) => {
   const oldRefreshToken = refreshToken;
-  const parsedUsername = username.toLowerCase().trim();
-  const parsedPassword = password.trim();
+  const parsedUsername = username?.toLowerCase().trim();
+  const parsedPassword = password?.trim();
 
-  if (!parsedUsername) {
-    throw new HttpError(400, "Username is required");
+  if (!parsedUsername || !parsedPassword) {
+    throw new HttpError(400, "Username and password are required");
   }
 
+  // Find user with exact username match (case insensitive)
   const user = await prisma.users.findFirst({
-    where: { username: { contains: username, mode: "insensitive" } },
+    where: { username: parsedUsername },
     select: {
       userId: true,
+      username: true,
       fullName: true,
       password: true,
       refreshTokens: true,
@@ -137,8 +162,8 @@ export const signIn = async ({ username, password, refreshToken }) => {
   }
 
   // Generate new access and refresh tokens
-  const accessToken = generateAccessToken(user.userId);
-  const newRefreshToken = generateRefreshToken(user.userId);
+  const accessToken = generateAccessToken(user.userId, user.role);
+  const newRefreshToken = generateRefreshToken(user.userId, user.role);
 
   let refreshTokenData = !oldRefreshToken
     ? user.refreshTokens || []
@@ -291,4 +316,9 @@ export const patchUser = async ({ userId, email, fullName, role }) => {
   });
 
   return updatedUser;
+};
+
+export const getMe = async ({ userId }) => {
+  const user = await prisma.users.findUnique({ where: { userId } });
+  return user;
 };

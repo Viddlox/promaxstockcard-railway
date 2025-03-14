@@ -5,6 +5,8 @@ import {
   signIn,
   signOut,
   generateTokens,
+  patchUser,
+  getMe,
 } from "./services.js";
 import {
   HttpError,
@@ -71,7 +73,6 @@ export const handleSignIn = async (req, res) => {
 
     return res.status(200).json({ data });
   } catch (e) {
-    console.log(e);
     if (e instanceof HttpError) {
       return res.status(e.status).json(formatErrorResponse(e.message));
     }
@@ -81,12 +82,14 @@ export const handleSignIn = async (req, res) => {
 
 export const handleSignOut = async (req, res) => {
   try {
-    const { userId, refreshToken } = req.body;
+    const { refreshToken } = req.body;
+    const { userId } = req.user;
+
+    console.log(userId, refreshToken);
     const data = await signOut({ userId, refreshToken });
 
     return res.status(200).json({ data });
   } catch (e) {
-    console.log(e);
     if (e instanceof HttpError) {
       return res.status(e.status).json(formatErrorResponse(e.message));
     }
@@ -101,12 +104,40 @@ export const generateTokensHandler = async (req, res) => {
 
     return res.status(200).json({ data });
   } catch (e) {
-    console.log(e);
     if (e instanceof HttpError) {
       return res.status(e.status).json(formatErrorResponse(e.message));
     }
     return res
       .status(500)
       .json(formatErrorResponse("Problem generating tokens"));
+  }
+};
+
+export const handleUpdateUser = async (req, res) => {
+  try {
+    const { userId, email, fullName, role } = req.body;
+
+    const data = await patchUser({ userId, email, fullName, role });
+
+    return res.status(200).json({ data });
+  } catch (e) {
+    if (e instanceof HttpError) {
+      return res.status(e.status).json(formatErrorResponse(e.message));
+    }
+    return res.status(500).json(formatErrorResponse("Error updating user"));
+  }
+};
+
+export const handleGetMe = async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const data = await getMe({ userId });
+
+    return res.status(200).json({ data });
+  } catch (e) {
+    if (e instanceof HttpError) {
+      return res.status(e.status).json(formatErrorResponse(e.message));
+    }
+    return res.status(500).json(formatErrorResponse("Error getting user"));
   }
 };

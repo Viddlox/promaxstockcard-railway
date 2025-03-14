@@ -47,26 +47,20 @@ export const getCustomers = async ({ limit, cursor, search }) => {
 
 export const createCustomer = async ({
   companyName,
-  contactName,
-  contactEmail,
-  contactPhone,
   address,
-  city,
-  state,
-  zip,
-  country,
+  phoneNumber,
+  ssmNumber,
+  postCode,
+  email,
 }) => {
   const customer = await prisma.customers.create({
     data: {
       companyName,
-      contactName,
-      contactEmail,
-      contactPhone,
       address,
-      city,
-      state,
-      zip,
-      country,
+      phoneNumber,
+      ssmNumber,
+      postCode,
+      email,
     },
   });
   return customer;
@@ -75,47 +69,38 @@ export const createCustomer = async ({
 export const updateCustomer = async ({
   customerId,
   companyName,
-  contactName,
-  contactEmail,
-  contactPhone,
   address,
-  city,
-  state,
-  zip,
-  country,
+  phoneNumber,
+  ssmNumber,
+  postCode,
+  email,
 }) => {
   return await prisma.$transaction(async (tx) => {
-    // Update all orders that have the given customerId
-    await tx.orders.updateMany({
-      where: { customerId },
-      data: {
-        orderItems: tx.$executeRaw`jsonb_set(orderItems, '{companyName}', ${companyName}::jsonb)`,
-      },
-    });
-
-    // Update the customer details
     const customer = await tx.customers.update({
       where: { customerId },
       data: {
         companyName,
-        contactName,
-        contactEmail,
-        contactPhone,
         address,
-        city,
-        state,
-        zip,
-        country,
+        phoneNumber,
+        ssmNumber,
+        postCode,
+        email,
       },
     });
-
     return customer;
   });
 };
 
-export const deleteCustomer = async ({ customerId }) => {
-  const customer = await prisma.customers.delete({
-    where: { customerId },
+export const deleteCustomers = async ({ customerIds = [] }) => {
+  if (customerIds.length === 0) {
+    throw new HttpError(400, "Missing required fields");
+  }
+
+  await prisma.customers.deleteMany({
+    where: {
+      customerId: {
+        in: customerIds,
+      },
+    },
   });
-  return customer;
 };

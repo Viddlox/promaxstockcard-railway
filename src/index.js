@@ -35,7 +35,7 @@ app.use("/products", passportAuth, productRoutes);
 app.use("/inventory", passportAuth, inventoryRoutes);
 app.use("/orders", passportAuth, orderRoutes);
 app.use("/customers", passportAuth, customerRoutes);
-app.use("/user", userRoutes);
+app.use("/users", userRoutes);
 
 /* SERVER */
 const port = Number(process.env.PORT) || 3000;
