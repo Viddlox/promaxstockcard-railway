@@ -130,7 +130,6 @@ export const deleteUser = async ({ userIds = [] }) => {
 };
 
 export const signIn = async ({ username, password, refreshToken }) => {
-  const oldRefreshToken = refreshToken;
   const parsedUsername = username?.toLowerCase().trim();
   const parsedPassword = password?.trim();
 
@@ -165,29 +164,41 @@ export const signIn = async ({ username, password, refreshToken }) => {
   const accessToken = generateAccessToken(user.userId, user.role);
   const newRefreshToken = generateRefreshToken(user.userId, user.role);
 
-  let refreshTokenData = !oldRefreshToken
-    ? user.refreshTokens || []
-    : user.refreshTokens.filter((token) => token !== oldRefreshToken);
+  if (!refreshToken) {
+    // Fresh login - clear all tokens
+    await prisma.users.update({
+      where: { userId: user.userId },
+      data: { refreshTokens: [newRefreshToken] },
+    });
+  } else {
+    // Token refresh flow
+    // Remove the old token
+    let refreshTokenData = user.refreshTokens.filter(
+      (token) => token !== refreshToken
+    );
 
-  if (oldRefreshToken) {
+    // Check if the token exists in any user (token reuse check)
     const foundToken = await prisma.users.findFirst({
-      where: { refreshTokens: { has: oldRefreshToken } },
+      where: {
+        refreshTokens: {
+          has: refreshToken, // 'has' works directly with String[]
+        },
+      },
     });
 
-    // If token was reused (not found in DB), remove all stored tokens
     if (!foundToken) {
-      refreshTokenData = [];
+      refreshTokenData = []; // Security measure - token reuse detected
     }
+
+    // Add the new token
+    refreshTokenData = [...refreshTokenData, newRefreshToken];
+
+    // Update the user
+    await prisma.users.update({
+      where: { userId: user.userId },
+      data: { refreshTokens: refreshTokenData },
+    });
   }
-
-  // Append the new refresh token
-  refreshTokenData = [...refreshTokenData, newRefreshToken];
-
-  // Update user's refresh tokens in database
-  await prisma.users.update({
-    where: { userId: user.userId },
-    data: { refreshTokens: refreshTokenData },
-  });
 
   return {
     userId: user.userId,
@@ -240,7 +251,7 @@ export const generateTokens = async ({ refreshToken }) => {
 
       // If the token was valid but is not in the DB, assume token reuse and clear all refresh tokens for the user
       await prisma.users.update({
-        where: { userId: decoded.id },
+        where: { userId: decoded.userId },
         data: { refreshTokens: [] },
       });
     } catch (err) {
@@ -257,7 +268,7 @@ export const generateTokens = async ({ refreshToken }) => {
   try {
     const decoded = verify(refreshToken, jwtSecret);
 
-    if (decoded.id !== foundUser.userId) {
+    if (decoded.userId !== foundUser.userId) {
       throw new HttpError(403, "Forbidden");
     }
 

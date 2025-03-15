@@ -15,29 +15,20 @@ passport.deserializeUser((obj, done) => done(null, obj));
 
 const strategy = new JwtStrategy(jwtOptions, async (jwtPayload, next) => {
   try {
-    const userId = jwtPayload?.id;
-    const user = await prisma.users.findFirst({ 
+    console.log("JWT Payload:", jwtPayload); // Debug what's in the token
+    const userId = jwtPayload.userId;
+
+    const user = await prisma.users.findFirst({
       where: { userId },
-      select: {
-        userId: true,
-        username: true,
-        role: true,
-        fullName: true
-      }
     });
 
     if (user) {
-      next(null, {
-        userId: user.userId,
-        role: user.role,
-        username: user.username,
-        fullName: user.fullName
-      });
+      next(null, user);
     } else {
       next(null, false);
     }
   } catch (e) {
-    console.error('JWT Strategy Error:', e);
+    console.error("JWT Strategy Error:", e);
     const unauthorizedError = new Error("Unauthorized");
     unauthorizedError.status = 401;
     next(unauthorizedError, false);
