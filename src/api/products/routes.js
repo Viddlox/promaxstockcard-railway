@@ -9,9 +9,17 @@ import { authorizeRole } from "../../middleware/index.js";
 
 const router = Router();
 
-router.get("/", authorizeRole(["ADMIN", "AGENT"]), handleGetProducts);
-router.post("/create", authorizeRole(["ADMIN"]), handlePostCreateProduct);
-router.delete("/delete", authorizeRole(["ADMIN"]), handleDeleteProducts);
-router.patch("/update", authorizeRole(["ADMIN"]), handlePatchProduct);
+router.get("/", authorizeRole(["ADMIN", "SALES", "OWNER"]), handleGetProducts);
+router.post(
+  "/create",
+  authorizeRole(["ADMIN", "OWNER"]),
+  handlePostCreateProduct
+);
+router.delete(
+  "/delete",
+  authorizeRole(["ADMIN", "OWNER"]),
+  handleDeleteProducts
+);
+router.patch("/update", authorizeRole(["ADMIN", "OWNER"]), handlePatchProduct);
 
 export { router as productRoutes };

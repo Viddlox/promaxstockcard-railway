@@ -15,7 +15,6 @@ passport.deserializeUser((obj, done) => done(null, obj));
 
 const strategy = new JwtStrategy(jwtOptions, async (jwtPayload, next) => {
   try {
-    console.log("JWT Payload:", jwtPayload); // Debug what's in the token
     const userId = jwtPayload.userId;
 
     const user = await prisma.users.findFirst({

@@ -8,10 +8,6 @@ import {
 import { patchInventoryParts } from "../inventory/services.js";
 import { patchProducts } from "../products/services.js";
 import { prisma } from "../../../prisma/prisma.js";
-// import {
-//   postCreateSalesSummary,
-//   postCreateTopProductsSummary,
-// } from "../dashboard/services.js";
 
 export const getOrders = async ({ limit, cursor, search }) => {
   const { limitQuery, cursorQuery } = getLimitAndCursor({ limit, cursor });
@@ -48,7 +44,7 @@ export const getOrders = async ({ limit, cursor, search }) => {
               customerName: { contains: search, mode: "insensitive" },
             },
             {
-              agentName: { contains: search, mode: "insensitive" },
+              salesAgentName: { contains: search, mode: "insensitive" },
             },
             {
               orderType:
@@ -83,7 +79,7 @@ export const getOrders = async ({ limit, cursor, search }) => {
               customerName: { contains: search, mode: "insensitive" },
             },
             {
-              agentName: { contains: search, mode: "insensitive" },
+              salesAgentName: { contains: search, mode: "insensitive" },
             },
             {
               orderType:
@@ -116,7 +112,7 @@ export const getOrders = async ({ limit, cursor, search }) => {
 export const postCreateOrder = async ({
   orderType,
   orderItems,
-  agentId,
+  salesAgentId,
   customerId = null,
   paymentMethod = null,
   notes = "",
@@ -125,24 +121,24 @@ export const postCreateOrder = async ({
     if (
       !orderType ||
       !orderItems ||
-      !agentId ||
+      !salesAgentId ||
       (orderType === "SALE" && !(paymentMethod || customerId))
     ) {
       throw new HttpError(400, "Missing required fields");
     }
 
-    let agent;
+    let salesAgent;
     try {
-      agent = await prisma.users.findUnique({
+      salesAgent = await prisma.users.findUnique({
         where: {
-          userId: agentId,
+          userId: salesAgentId,
         },
       });
-      if (!agent) {
-        throw new HttpError(404, "Agent not found");
+      if (!salesAgent) {
+        throw new HttpError(404, "Sales agent not found");
       }
     } catch (error) {
-      throw new HttpError(500, "Failed to fetch agent");
+      throw new HttpError(500, "Failed to fetch sales agent");
     }
 
     let customer;
@@ -169,13 +165,12 @@ export const postCreateOrder = async ({
     }
 
     let bomChanges = [];
+    let aggregatedItems = { products: {}, parts: {} };
+    let partsArray = [];
+    let productsArray = [];
 
-    if (
-      orderType === "SALE" &&
-      parsedOrderItems &&
-      Array.isArray(parsedOrderItems)
-    ) {
-      const aggregatedItems = parsedOrderItems.reduce(
+    if (parsedOrderItems && Array.isArray(parsedOrderItems)) {
+      aggregatedItems = parsedOrderItems.reduce(
         (acc, item) => {
           const { productId, partId, quantity, bom } = item;
 
@@ -203,6 +198,22 @@ export const postCreateOrder = async ({
         { products: {}, parts: {} }
       );
 
+      partsArray = Object.keys(aggregatedItems.parts).map((key) => {
+        return { partId: key, quantity: aggregatedItems.parts[key] };
+      });
+
+      productsArray = Object.keys(aggregatedItems.products).map((key) => {
+        return { productId: key, quantity: aggregatedItems.products[key] };
+      });
+    } else {
+      throw new HttpError(400, "Invalid orderItems JSON format");
+    }
+
+    if (
+      orderType === "SALE" &&
+      parsedOrderItems &&
+      Array.isArray(parsedOrderItems)
+    ) {
       const productIds = Object.keys(aggregatedItems.products);
       const partIds = Object.keys(aggregatedItems.parts);
 
@@ -264,10 +275,6 @@ export const postCreateOrder = async ({
 
       totalAmount = totalPriceChangesArr.reduce((sum, price) => sum + price, 0);
 
-      const partsArray = Object.keys(aggregatedItems.parts).map((key) => {
-        return { partId: key, quantity: aggregatedItems.parts[key] };
-      });
-
       try {
         await patchInventoryParts({
           inventoryParts: partsArray,
@@ -278,10 +285,6 @@ export const postCreateOrder = async ({
         throw new HttpError(500, "Failed to update inventory");
       }
 
-      const productsArray = Object.keys(aggregatedItems.products).map((key) => {
-        return { productId: key, quantity: aggregatedItems.products[key] };
-      });
-
       try {
         await patchProducts({
           products: productsArray,
@@ -291,71 +294,52 @@ export const postCreateOrder = async ({
         console.error("Failed to update products:", error);
         throw new HttpError(500, "Failed to update products");
       }
-
-      try {
-        newOrder = await prisma.orders.create({
-          data: {
-            orderType,
-            orderItems: parsedOrderItems,
-            agentId,
-            customerId,
-            customerName: customer.companyName,
-            paymentMethod,
-            totalAmount,
-            notes,
-            agentName: agent.fullName,
-          },
-        });
-      } catch (error) {
-        console.error("Failed to create order:", error);
-        throw new HttpError(500, "Failed to create order in database");
-      }
     } else if (
       orderType === "STOCK" &&
       parsedOrderItems &&
       Array.isArray(parsedOrderItems)
     ) {
-      // Process each item sequentially
-      for (const item of parsedOrderItems) {
-        if (item.productId) {
-          try {
-            await patchProducts({
-              products: [
-                { productId: item.productId, quantity: item.quantity },
-              ],
-            });
-          } catch (error) {
-            console.error("Failed to update products:", error);
-            throw new HttpError(500, "Failed to update products");
-          }
-        } else if (item.partId) {
-          try {
-            await patchInventoryParts({
-              inventoryParts: [
-                { partId: item.partId, quantity: item.quantity },
-              ],
-            });
-          } catch (error) {
-            console.error("Failed to update inventory:", error);
-            throw new HttpError(500, "Failed to update inventory");
-          }
-        }
+      try {
+        await patchInventoryParts({ inventoryParts: partsArray });
+      } catch (error) {
+        console.error("Failed to update inventory:", error);
+        throw new HttpError(500, "Failed to update inventory");
       }
 
       try {
-        newOrder = await prisma.orders.create({
-          data: {
-            orderType,
-            orderItems: parsedOrderItems,
-            agentId,
-            notes,
-            agentName: agent.fullName,
-          },
-        });
+        await patchProducts({ products: productsArray });
       } catch (error) {
-        console.error("Failed to create stock order:", error);
-        throw new HttpError(500, "Failed to create stock order in database");
+        console.error("Failed to update products:", error);
+        throw new HttpError(500, "Failed to update products");
       }
+    }
+    try {
+      const orderData =
+        orderType === "STOCK"
+          ? {
+              orderType,
+              orderItems: parsedOrderItems,
+              salesAgentId,
+              salesAgentName: salesAgent.fullName,
+            }
+          : {
+              orderType,
+              orderItems: parsedOrderItems,
+              salesAgentId,
+              customerId,
+              customerName: customer?.companyName,
+              paymentMethod,
+              totalAmount,
+              notes,
+              salesAgentName: salesAgent.fullName,
+            };
+
+      await prisma.orders.create({
+        data: orderData,
+      });
+    } catch (error) {
+      console.error("Failed to create order:", error);
+      throw new HttpError(500, "Failed to create order in database");
     }
   } catch (error) {
     console.error("Order creation failed:", error);

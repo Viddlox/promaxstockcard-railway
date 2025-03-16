@@ -1,6 +1,5 @@
 import { HttpError } from "../../utils/http.js";
 import { getLimitAndCursor } from "../../utils/query.js";
-// import { postCreateInventorySummary } from "../dashboard/services.js";
 
 import { prisma } from "../../../prisma/prisma.js";
 
@@ -96,7 +95,7 @@ export const patchInventoryParts = async ({
   isSale = false,
 }) => {
   if (!inventoryParts || inventoryParts.length === 0) {
-    throw new HttpError(400, "Missing required fields");
+    return;
   }
 
   try {

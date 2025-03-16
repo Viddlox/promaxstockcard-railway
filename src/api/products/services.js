@@ -120,7 +120,7 @@ export const deleteProducts = async ({ productIds = [] }) => {
 
 export const patchProducts = async ({ products, isSale = false }) => {
   if (!products || products.length === 0) {
-    throw new HttpError(400, "Missing required fields");
+    return;
   }
   try {
     const updatedProducts = await Promise.all(

@@ -8,12 +8,16 @@ import { authorizeRole } from "../../middleware/index.js";
 
 const router = Router();
 
-router.get("/", authorizeRole(["ADMIN", "AGENT"]), handleGetOrders);
+router.get(
+  "/",
+  authorizeRole(["ADMIN", "SALES", "OWNER", "STORE"]),
+  handleGetOrders
+);
 router.post(
   "/create",
-  authorizeRole(["ADMIN", "AGENT"]),
+  authorizeRole(["ADMIN", "SALES", "OWNER", "STORE"]),
   handlePostCreateOrder
 );
-router.delete("/delete", authorizeRole(["ADMIN"]), handleDeleteOrders);
+router.delete("/delete", authorizeRole(["ADMIN", "OWNER"]), handleDeleteOrders);
 
 export { router as orderRoutes };

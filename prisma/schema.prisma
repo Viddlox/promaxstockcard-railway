@@ -24,9 +24,10 @@ enum OrderType {
 }
 
 enum Role {
+  OWNER
   ADMIN
-  AGENT
-  WORKER
+  SALES
+  STORE
 }
 
 model Products {
@@ -57,7 +58,7 @@ model Users {
   userId        String   @id @default(uuid())
   username      String   @unique
   password      String
-  role          Role     @default(WORKER)
+  role          Role     @default(STORE)
   email         String?
   orders        Orders[]
   fullName      String
@@ -85,21 +86,21 @@ model Customers {
 }
 
 model Orders {
-  orderId       String         @id @default(uuid())
-  orderType     OrderType
-  orderItems    Json
-  agentId       String
-  agentName     String         @default("Unknown")
-  customerId    String?
-  customerName  String         @default("Unknown")
-  paymentMethod PaymentMethod?
-  totalAmount   Decimal?
-  notes         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @default(now()) @updatedAt
+  orderId        String         @id @default(uuid())
+  orderType      OrderType
+  orderItems     Json
+  salesAgentId   String
+  salesAgentName String         @default("N/A")
+  customerId     String?
+  customerName   String         @default("N/A")
+  paymentMethod  PaymentMethod?
+  totalAmount    Decimal?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @default(now()) @updatedAt
 
-  customer Customers? @relation(fields: [customerId], references: [customerId], onDelete: Cascade)
-  agent    Users      @relation(fields: [agentId], references: [userId], onDelete: Cascade)
+  customer   Customers? @relation(fields: [customerId], references: [customerId], onDelete: Cascade)
+  salesAgent Users      @relation(fields: [salesAgentId], references: [userId], onDelete: Cascade)
 
   @@unique([updatedAt, orderId])
 }

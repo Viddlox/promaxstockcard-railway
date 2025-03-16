@@ -15,7 +15,7 @@ const randomBytesAsync = promisify(crypto.randomBytes);
 export const getUsers = async ({
   limit,
   cursor,
-  role = "AGENT",
+  role = "STORE",
   search = "",
 }) => {
   const { limitQuery, cursorQuery } = getLimitAndCursor({ limit, cursor });

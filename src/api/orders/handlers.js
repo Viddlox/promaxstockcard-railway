@@ -28,13 +28,13 @@ export const handleGetOrders = async (req, res) => {
 
 export const handlePostCreateOrder = async (req, res) => {
   try {
-    const { orderType, orderItems, agentId, customerId, paymentMethod, notes } =
+    const { orderType, orderItems, salesAgentId, customerId, paymentMethod, notes } =
       req.body;
 
     await postCreateOrder({
       orderType,
       orderItems,
-      agentId,
+      salesAgentId,
       customerId,
       paymentMethod,
       notes,

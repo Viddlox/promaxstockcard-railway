@@ -15,11 +15,11 @@ export const authorizeDeleteUser = (req, res, next) => {
   const { userId, role } = req.user; // Extract from JWT
   const { userIds } = req.body; // Users being deleted
 
-  // Ensure only ADMIN can delete users
-  if (role !== "ADMIN") {
+  // Ensure only OWNER can delete users
+  if (role !== "OWNER") {
     return res
       .status(403)
-      .json(formatErrorResponse("Forbidden: Only admins can delete users"));
+      .json(formatErrorResponse("Forbidden: Only owners can delete users"));
   }
 
   // Prevent self-deletion

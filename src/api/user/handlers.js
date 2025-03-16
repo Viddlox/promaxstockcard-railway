@@ -85,7 +85,6 @@ export const handleSignOut = async (req, res) => {
     const { refreshToken } = req.body;
     const { userId } = req.user;
 
-    console.log(userId, refreshToken);
     const data = await signOut({ userId, refreshToken });
 
     return res.status(200).json({ data });
@@ -130,17 +129,9 @@ export const handleUpdateUser = async (req, res) => {
 
 export const handleGetMe = async (req, res) => {
   try {
-    console.log("Current user from passport:", req.user); // Debug what's in req.user
     const { userId } = req.user;
-    
-    // Log the userId we're using for the query
-    console.log("Looking up user with ID:", userId);
-    
     const data = await getMe({ userId });
-    
-    // Log what we found
-    console.log("Found user data:", data);
-    
+
     return res.status(200).json({ data });
   } catch (e) {
     if (e instanceof HttpError) {
