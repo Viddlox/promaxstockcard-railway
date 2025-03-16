@@ -1,4 +1,8 @@
-import { deleteOrders, getOrders, postCreateOrder } from "./services.js";
+import {
+  deleteOrders,
+  getOrders,
+  postCreateOrder,
+} from "./services.js";
 import {
   HttpError,
   formatResponse,
@@ -28,8 +32,14 @@ export const handleGetOrders = async (req, res) => {
 
 export const handlePostCreateOrder = async (req, res) => {
   try {
-    const { orderType, orderItems, salesAgentId, customerId, paymentMethod, notes } =
-      req.body;
+    const {
+      orderType,
+      orderItems,
+      salesAgentId,
+      customerId,
+      paymentMethod,
+      notes,
+    } = req.body;
 
     await postCreateOrder({
       orderType,

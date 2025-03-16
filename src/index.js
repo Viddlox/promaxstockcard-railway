@@ -1,21 +1,21 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 // Load environment variables first
 dotenv.config();
 
 // Then import other modules
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import bodyParser from 'body-parser';
-import { passport } from './config/passport.js';
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import bodyParser from "body-parser";
+import { passport } from "./config/passport.js";
 
 import { productRoutes } from "./api/products/routes.js";
 import { inventoryRoutes } from "./api/inventory/routes.js";
 import { orderRoutes } from "./api/orders/routes.js";
 import { customerRoutes } from "./api/customer/routes.js";
 import { userRoutes } from "./api/user/routes.js";
-
+import { redirectionRoutes } from "./api/redirection/routes.js";
 /* CONFIGURATIONS */
 const app = express();
 app.use(express.json());
@@ -35,6 +35,7 @@ app.use("/products", passportAuth, productRoutes);
 app.use("/inventory", passportAuth, inventoryRoutes);
 app.use("/orders", passportAuth, orderRoutes);
 app.use("/customers", passportAuth, customerRoutes);
+app.use("/redirection", passportAuth, redirectionRoutes);
 app.use("/users", userRoutes);
 
 /* SERVER */

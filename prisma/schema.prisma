@@ -31,25 +31,27 @@ enum Role {
 }
 
 model Products {
-  productId   String   @id
-  productName String   @unique
-  basePrice   Decimal
-  quantity    Int      @default(0)
-  bom         Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  productId        String   @id
+  productName      String   @unique
+  basePrice        Decimal
+  quantity         Int      @default(0)
+  bom              Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+  orderRedirectUrl String?
 
   @@unique([updatedAt, productId])
 }
 
 model Inventory {
-  partId       String   @id
-  partName     String
-  partPrice    Decimal
-  partQuantity Int      @default(0)
-  partUoM      String   @default("UNIT")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
+  partId           String   @id
+  partName         String
+  partPrice        Decimal
+  partQuantity     Int      @default(0)
+  partUoM          String   @default("UNIT")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+  orderRedirectUrl String?
 
   @@unique([updatedAt, partId])
 }
