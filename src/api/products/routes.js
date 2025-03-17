@@ -9,7 +9,11 @@ import { authorizeRole } from "../../middleware/index.js";
 
 const router = Router();
 
-router.get("/", authorizeRole(["ADMIN", "SALES", "OWNER"]), handleGetProducts);
+router.get(
+  "/",
+  authorizeRole(["STORE", "ADMIN", "SALES", "OWNER"]),
+  handleGetProducts
+);
 router.post(
   "/create",
   authorizeRole(["ADMIN", "OWNER"]),
