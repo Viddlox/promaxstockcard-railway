@@ -137,7 +137,6 @@ export const signIn = async ({ username, password, refreshToken }) => {
     throw new HttpError(400, "Username and password are required");
   }
 
-  // Find user with exact username match (case insensitive)
   const user = await prisma.users.findFirst({
     where: { username: parsedUsername },
     select: {
@@ -164,41 +163,25 @@ export const signIn = async ({ username, password, refreshToken }) => {
   const accessToken = generateAccessToken(user.userId, user.role);
   const newRefreshToken = generateRefreshToken(user.userId, user.role);
 
-  if (!refreshToken) {
-    // Fresh login - clear all tokens
-    await prisma.users.update({
-      where: { userId: user.userId },
-      data: { refreshTokens: [newRefreshToken] },
-    });
-  } else {
-    // Token refresh flow
-    // Remove the old token
-    let refreshTokenData = user.refreshTokens.filter(
-      (token) => token !== refreshToken
-    );
+  let refreshTokenData = !refreshToken
+    ? user.refreshTokens
+    : user.refreshTokens.filter((token) => token !== refreshToken);
 
-    // Check if the token exists in any user (token reuse check)
+  if (refreshToken) {
     const foundToken = await prisma.users.findFirst({
-      where: {
-        refreshTokens: {
-          has: refreshToken, // 'has' works directly with String[]
-        },
-      },
+      refreshToken: refreshToken,
     });
-
     if (!foundToken) {
-      refreshTokenData = []; // Security measure - token reuse detected
+      refreshTokenData = [];
     }
-
-    // Add the new token
-    refreshTokenData = [...refreshTokenData, newRefreshToken];
-
-    // Update the user
-    await prisma.users.update({
-      where: { userId: user.userId },
-      data: { refreshTokens: refreshTokenData },
-    });
   }
+
+  refreshTokenData = [...refreshTokenData, newRefreshToken];
+
+  await prisma.users.update({
+    where: { userId: user.userId },
+    data: { refreshTokens: refreshTokenData },
+  });
 
   return {
     userId: user.userId,
@@ -241,73 +224,69 @@ export const generateTokens = async ({ refreshToken }) => {
   // Check if refresh token exists in the database
   const foundUser = await prisma.users.findFirst({
     where: { refreshTokens: { has: refreshToken } },
-    select: { userId: true, refreshTokens: true },
+    select: { userId: true, role: true, refreshTokens: true },
   });
 
   // Detect reused token (token does not exist in DB)
   if (!foundUser) {
-    try {
-      const decoded = verify(refreshToken, jwtSecret);
-
-      // If the token was valid but is not in the DB, assume token reuse and clear all refresh tokens for the user
+    verify(refreshToken, jwtSecret, async (err, decoded) => {
+      if (err) {
+        return;
+      }
       await prisma.users.update({
         where: { userId: decoded.userId },
         data: { refreshTokens: [] },
       });
-    } catch (err) {
-      // Ignore errors here; we just clear tokens if the user exists
-    }
+    });
     throw new HttpError(403, "Forbidden");
   }
 
   // Remove the used refresh token from the list
-  let validRefreshTokens = foundUser.refreshTokens.filter(
+  const refreshTokenData = foundUser.refreshTokens.filter(
     (token) => token !== refreshToken
   );
 
-  try {
-    const decoded = verify(refreshToken, jwtSecret);
-
-    if (decoded.userId !== foundUser.userId) {
+  return verify(refreshToken, jwtSecret, async (err, decoded) => {
+    if (err) {
+      await prisma.users.update({
+        where: { userId: foundUser.userId },
+        data: { refreshTokens: refreshTokenData },
+      });
       throw new HttpError(403, "Forbidden");
     }
 
-    // Generate new tokens
-    const newAccessToken = generateAccessToken(foundUser.userId);
-    const newRefreshToken = generateRefreshToken(foundUser.userId);
+    const userId = decoded.userId;
+    const userRole = decoded.role;
+    if (userId !== foundUser.userId.toString()) {
+      throw new HttpError(403, "Forbidden");
+    }
 
-    validRefreshTokens.push(newRefreshToken);
+    const accessToken = generateAccessToken(userId, userRole);
+    const newRefreshToken = generateRefreshToken(userId, userRole);
 
-    // Remove expired refresh tokens
+    let newRefreshTokenData = [...refreshTokenData, newRefreshToken];
+
     const expiredRefreshTokens = foundUser.refreshTokens.filter((token) => {
       const decodedToken = decode(token);
       return decodedToken.exp < Date.now() / 1000;
     });
 
     if (expiredRefreshTokens.length) {
-      validRefreshTokens = validRefreshTokens.filter(
+      newRefreshTokenData = foundUser.refreshTokens.filter(
         (token) => !expiredRefreshTokens.includes(token)
       );
     }
 
-    // Update user refresh tokens in DB
     await prisma.users.update({
-      where: { userId: foundUser.userId },
-      data: { refreshTokens: validRefreshTokens },
+      where: { userId: userId },
+      data: { refreshTokens: newRefreshTokenData },
     });
 
     return {
-      accessToken: newAccessToken,
+      accessToken,
       refreshToken: newRefreshToken,
     };
-  } catch (err) {
-    // If verification fails, remove the used refresh token
-    await prisma.users.update({
-      where: { userId: foundUser.userId },
-      data: { refreshTokens: validRefreshTokens },
-    });
-    throw new HttpError(403, "Forbidden");
-  }
+  });
 };
 
 export const patchUser = async ({ userId, email, fullName, role }) => {

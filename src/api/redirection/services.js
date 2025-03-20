@@ -1,27 +1,6 @@
 import { HttpError } from "../../utils/http.js";
 import { prisma } from "../../../prisma/prisma.js";
 
-export const getRedirectionUrl = async ({ itemType = "product", id }) => {
-  if (!itemType || !id) {
-    throw new HttpError(400, "Missing required fields");
-  }
-
-  const item = await prisma[itemType].findUnique({
-    where: {
-      [itemType === "product" ? "productId" : "partId"]: id,
-    },
-    select: {
-      orderRedirectUrl: true,
-    },
-  });
-
-  if (!item) {
-    throw new HttpError(404, "Item not found");
-  }
-
-  return item.orderRedirectUrl;
-};
-
 export const createRedirectionUrl = async ({
   itemType = "product",
   orderType = "STOCK",
@@ -59,7 +38,12 @@ export const createRedirectionUrl = async ({
 
     if (!redirectUrl) {
       const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
-      redirectUrl = `${baseUrl}/orders?id=${id}&orderType=${orderType}`;
+
+      const encodedId = encodeURIComponent(id);
+      const encodedOrderType = encodeURIComponent(orderType);
+      const encodedItemType = encodeURIComponent(itemType);
+
+      redirectUrl = `${baseUrl}/orders?id=${encodedId}&orderType=${encodedOrderType}&itemType=${encodedItemType}`;
 
       await model.update({
         where: { [key]: id },

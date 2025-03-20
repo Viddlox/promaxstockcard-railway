@@ -35,7 +35,7 @@ model Products {
   productName      String   @unique
   basePrice        Decimal
   quantity         Int      @default(0)
-  bom              Json?
+  bom              Json
   createdAt        DateTime @default(now())
   updatedAt        DateTime @default(now()) @updatedAt
   orderRedirectUrl String?
@@ -100,6 +100,7 @@ model Orders {
   notes          String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @default(now()) @updatedAt
+  modifications  Json?          @default("[]")
 
   customer   Customers? @relation(fields: [customerId], references: [customerId], onDelete: Cascade)
   salesAgent Users      @relation(fields: [salesAgentId], references: [userId], onDelete: Cascade)

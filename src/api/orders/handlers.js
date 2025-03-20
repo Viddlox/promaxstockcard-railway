@@ -1,8 +1,4 @@
-import {
-  deleteOrders,
-  getOrders,
-  postCreateOrder,
-} from "./services.js";
+import { deleteOrders, getOrders, postCreateOrder } from "./services.js";
 import {
   HttpError,
   formatResponse,
@@ -12,11 +8,13 @@ import {
 export const handleGetOrders = async (req, res) => {
   try {
     const { limit, cursor, search } = req.query;
+    const { role } = req.user;
 
     const { data, nextCursor, total, hasNextPage } = await getOrders({
       limit,
       cursor,
       search,
+      role,
     });
 
     res

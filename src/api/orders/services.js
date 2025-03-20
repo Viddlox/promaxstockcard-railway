@@ -9,10 +9,49 @@ import { patchInventoryParts } from "../inventory/services.js";
 import { patchProducts } from "../products/services.js";
 import { prisma } from "../../../prisma/prisma.js";
 
-export const getOrders = async ({ limit, cursor, search }) => {
+export const getOrders = async ({ limit, cursor, search, role }) => {
   const { limitQuery, cursorQuery } = getLimitAndCursor({ limit, cursor });
 
   const parsedCursor = cursorQuery ? JSON.parse(cursorQuery) : null;
+
+  const roleFilter =
+    role === "STORE"
+      ? { orderType: "STOCK" }
+      : role === "SALES"
+      ? { orderType: "SALE" }
+      : {};
+
+  const searchFilter = search
+    ? {
+        OR: [
+          {
+            orderItems: {
+              path: ["orderItems", "productId"],
+              string_contains: search,
+            },
+          },
+          {
+            orderItems: {
+              path: ["orderItems", "partId"],
+              string_contains: search,
+            },
+          },
+          {
+            customerName: { contains: search, mode: "insensitive" },
+          },
+          {
+            salesAgentName: { contains: search, mode: "insensitive" },
+          },
+          {
+            orderType:
+              search.toUpperCase() === "SALE" ||
+              search.toUpperCase() === "STOCK"
+                ? search.toUpperCase()
+                : undefined,
+          },
+        ],
+      }
+    : {};
 
   const orders = await prisma.orders.findMany({
     take: limitQuery,
@@ -25,72 +64,18 @@ export const getOrders = async ({ limit, cursor, search }) => {
           },
         }
       : undefined,
-    where: search
-      ? {
-          OR: [
-            {
-              orderItems: {
-                path: ["orderItems", "productId"],
-                string_contains: search,
-              },
-            },
-            {
-              orderItems: {
-                path: ["orderItems", "partId"],
-                string_contains: search,
-              },
-            },
-            {
-              customerName: { contains: search, mode: "insensitive" },
-            },
-            {
-              salesAgentName: { contains: search, mode: "insensitive" },
-            },
-            {
-              orderType:
-                search.toUpperCase() === "SALE" ||
-                search.toUpperCase() === "STOCK"
-                  ? search.toUpperCase()
-                  : undefined,
-            },
-          ],
-        }
-      : {},
+    where: {
+      ...roleFilter,
+      ...searchFilter,
+    },
     orderBy: { updatedAt: "desc" },
   });
 
   const totalCount = await prisma.orders.count({
-    where: search
-      ? {
-          OR: [
-            {
-              orderItems: {
-                path: ["orderItems", "productId"],
-                string_contains: search,
-              },
-            },
-            {
-              orderItems: {
-                path: ["orderItems", "partId"],
-                string_contains: search,
-              },
-            },
-            {
-              customerName: { contains: search, mode: "insensitive" },
-            },
-            {
-              salesAgentName: { contains: search, mode: "insensitive" },
-            },
-            {
-              orderType:
-                search.toUpperCase() === "SALE" ||
-                search.toUpperCase() === "STOCK"
-                  ? search.toUpperCase()
-                  : undefined,
-            },
-          ],
-        }
-      : {},
+    where: {
+      ...roleFilter,
+      ...searchFilter,
+    },
   });
 
   const nextCursor =
@@ -181,7 +166,7 @@ export const postCreateOrder = async ({
             if (bom && Array.isArray(bom)) {
               bom.forEach((bomItem) => {
                 const { partId: bomPartId, quantity: bomQuantity } = bomItem;
-                if (!bomPartId || !bomQuantity) {
+                if (!bomPartId) {
                   console.error("Invalid BOM item:", bomItem);
                   throw new HttpError(400, "Invalid BOM item format");
                 }
@@ -253,8 +238,17 @@ export const postCreateOrder = async ({
             }
             const backendBom = product.bom;
             const productBomChanges = sumBomChanges(backendBom, orderBom || []);
+            const changeCount = productBomChanges.length;
 
-            bomChanges.push(...productBomChanges);
+            if (changeCount > 0) {
+              bomChanges.push({
+                productId,
+                productName: product.productName,
+                modifications: productBomChanges,
+                originalBom: backendBom,
+                changeCount,
+              });
+            }
 
             const calculatedCosts = await calculateTotalCost(
               productBomChanges,
@@ -332,6 +326,7 @@ export const postCreateOrder = async ({
               totalAmount,
               notes,
               salesAgentName: salesAgent.fullName,
+              modifications: bomChanges,
             };
 
       await prisma.orders.create({
