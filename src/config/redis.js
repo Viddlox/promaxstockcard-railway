@@ -2,14 +2,14 @@ import Redis from "ioredis";
 
 // Create standard Redis client for general use
 const redisConfig = {
-  host: process.env.REDISHOST || "localhost",
-  port: process.env.REDISPORT || 6379,
-  password: process.env.REDISPASSWORD,
+  host: process.env.REDIS_HOST || "localhost",
+  port: process.env.REDIS_PORT || 6379,
+  password: process.env.REDIS_PASSWORD,
+  family: 0, // Enable dual stack lookup (IPv4 + IPv6)
   retryStrategy: (times) => {
     const delay = Math.min(times * 50, 2000);
     return delay;
   },
-  maxRetriesPerRequest: null,
 };
 
 export const redisConnection = new Redis(redisConfig);
