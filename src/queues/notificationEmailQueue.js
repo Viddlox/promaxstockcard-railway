@@ -7,6 +7,7 @@ export const notificationEmailQueue = new Queue("notification-email", {
   connection: {
     ...redisConnection.options, // Spread existing Redis options
     family: 0, // Ensure dual stack lookup is enabled for BullMQ
+    maxRetriesPerRequest: null,
   },
   defaultJobOptions: {
     removeOnComplete: true,
