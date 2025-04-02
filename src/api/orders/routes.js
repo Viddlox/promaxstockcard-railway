@@ -3,6 +3,7 @@ import {
   handleGetOrders,
   handlePostCreateOrder,
   handleDeleteOrders,
+  handleExportOrders,
 } from "./handlers.js";
 import { authorizeRole } from "../../middleware/index.js";
 
@@ -19,5 +20,6 @@ router.post(
   handlePostCreateOrder
 );
 router.delete("/delete", authorizeRole(["ADMIN", "OWNER"]), handleDeleteOrders);
+router.get("/export", authorizeRole(["ADMIN", "OWNER"]), handleExportOrders);
 
 export { router as orderRoutes };

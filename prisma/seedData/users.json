@@ -8,145 +8,18 @@
   },
   {
     "username": "admin1",
-    "fullName": "Alice Johnson",
+    "fullName": "Michael Cheng II",
     "password": "password",
     "role": "ADMIN",
-    "email": "alice.johnson@example.com"
+    "email": "viddlox@gmail.com"
   },
   {
     "username": "admin2",
-    "fullName": "Bob Williams",
+    "fullName": "Michael Cheng III",
     "password": "password",
     "role": "ADMIN",
-    "email": "bob.williams@example.com"
+    "email": "michael@trinket.ai"
   },
-  {
-    "username": "admin3",
-    "fullName": "Charlie Brown",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "charlie.brown@example.com"
-  },
-  {
-    "username": "admin4",
-    "fullName": "David Smith",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "david.smith@example.com"
-  },
-  {
-    "username": "admin5",
-    "fullName": "Emma Wilson",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "emma.wilson@example.com"
-  },
-  {
-    "username": "admin6",
-    "fullName": "Frank Miller",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "frank.miller@example.com"
-  },
-  {
-    "username": "admin7",
-    "fullName": "Grace Davis",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "grace.davis@example.com"
-  },
-  {
-    "username": "admin8",
-    "fullName": "Henry White",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "henry.white@example.com"
-  },
-  {
-    "username": "admin9",
-    "fullName": "Ivy Thomas",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "ivy.thomas@example.com"
-  },
-  {
-    "username": "admin10",
-    "fullName": "Jack Harris",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "jack.harris@example.com"
-  },
-  {
-    "username": "admin11",
-    "fullName": "Katherine Lee",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "katherine.lee@example.com"
-  },
-  {
-    "username": "admin12",
-    "fullName": "Lucas Anderson",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "lucas.anderson@example.com"
-  },
-  {
-    "username": "admin13",
-    "fullName": "Mia Taylor",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "mia.taylor@example.com"
-  },
-  {
-    "username": "admin14",
-    "fullName": "Nathan Wright",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "nathan.wright@example.com"
-  },
-  {
-    "username": "admin15",
-    "fullName": "Olivia Martinez",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "olivia.martinez@example.com"
-  },
-  {
-    "username": "admin16",
-    "fullName": "Peter Thompson",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "peter.thompson@example.com"
-  },
-  {
-    "username": "admin17",
-    "fullName": "Quinn Garcia",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "quinn.garcia@example.com"
-  },
-  {
-    "username": "admin18",
-    "fullName": "Rachel Moore",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "rachel.moore@example.com"
-  },
-  {
-    "username": "admin19",
-    "fullName": "Samuel Rodriguez",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "samuel.rodriguez@example.com"
-  },
-  {
-    "username": "admin20",
-    "fullName": "Tiffany Chen",
-    "password": "password",
-    "role": "ADMIN",
-    "email": "tiffany.chen@example.com"
-  },
-
   {
     "username": "agent1",
     "fullName": "Liam Clark",

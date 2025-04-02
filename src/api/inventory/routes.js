@@ -4,6 +4,7 @@ import {
   handleGetInventory,
   handlePostCreateInventoryPart,
   handlePatchInventoryPart,
+  handleExportInventory,
 } from "./handlers.js";
 import { authorizeRole } from "../../middleware/index.js";
 
@@ -25,5 +26,6 @@ router.patch(
   authorizeRole(["ADMIN", "OWNER"]),
   handlePatchInventoryPart
 );
+router.get("/export", authorizeRole(["ADMIN", "OWNER"]), handleExportInventory);
 
 export { router as inventoryRoutes };

@@ -4,6 +4,7 @@ import {
   handlePostCreateProduct,
   handleDeleteProducts,
   handlePatchProduct,
+  handleExportProducts,
 } from "./handlers.js";
 import { authorizeRole } from "../../middleware/index.js";
 
@@ -25,5 +26,6 @@ router.delete(
   handleDeleteProducts
 );
 router.patch("/update", authorizeRole(["ADMIN", "OWNER"]), handlePatchProduct);
+router.get("/export", authorizeRole(["ADMIN", "OWNER"]), handleExportProducts);
 
 export { router as productRoutes };

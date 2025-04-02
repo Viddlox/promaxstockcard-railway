@@ -43,6 +43,7 @@ const main = async () => {
     "users.json",
     "customers.json",
     "orders.json",
+    "notifications.json",
   ];
 
   const orderedFileNamesToSeed = [

@@ -3,6 +3,7 @@ import {
   postCreateProduct,
   deleteProducts,
   patchProduct,
+  exportProducts,
 } from "./services.js";
 import {
   HttpError,
@@ -35,16 +36,21 @@ export const handlePostCreateProduct = async (req, res) => {
   try {
     const { productId, productName, basePrice, quantity, bom } = req.body;
 
+    // Safely extract user information
+    const userId = req.user?.userId || null;
+
     const data = await postCreateProduct({
       productId,
       productName,
       basePrice,
       quantity,
       bom,
+      userId,
     });
 
     res.status(201).json({ data });
   } catch (e) {
+    console.error("Error creating product:", e);
     if (e instanceof HttpError) {
       return res.status(e.status).json(formatErrorResponse(e.message));
     }
@@ -56,23 +62,22 @@ export const handleDeleteProducts = async (req, res) => {
   try {
     const { productIds } = req.body;
 
-    await deleteProducts({ productIds });
+    // Extract userId from request if available
+    const userId = req.user?.userId || null;
 
-    return res
-      .status(200)
-      .json({ message: `${productIds} successfully deleted` });
-  } catch (e) {
-    if (e instanceof HttpError) {
-      return res.status(e.status).json(formatErrorResponse(e.message));
-    }
-    return res.status(500).json(formatErrorResponse("Error deleting products"));
+    const result = await deleteProducts({ productIds, userId });
+
+    res.status(200).json(result);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ error: error.message });
   }
 };
 
 export const handlePatchProduct = async (req, res) => {
   try {
-    const { productId, productName, basePrice, quantity, bom } =
-      req.body;
+    const { productId, productName, basePrice, quantity, bom } = req.body;
+    const { userId } = req.user;
 
     const data = await patchProduct({
       productId,
@@ -80,6 +85,7 @@ export const handlePatchProduct = async (req, res) => {
       basePrice,
       quantity,
       bom,
+      userId,
     });
 
     return res.status(200).json({ data });
@@ -88,5 +94,21 @@ export const handlePatchProduct = async (req, res) => {
       return res.status(e.status).json(formatErrorResponse(e.message));
     }
     return res.status(500).json(formatErrorResponse("Error updating product"));
+  }
+};
+
+export const handleExportProducts = async (req, res) => {
+  try {
+    const csvContent = await exportProducts();
+    
+    // Set proper headers with charset
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=products_export_${new Date().toISOString().split('T')[0]}.csv`);
+    
+    // Send as plain text
+    res.send(csvContent);
+  } catch (error) {
+    console.error("Error handling product export:", error);
+    res.status(500).json({ error: "Failed to export products" });
   }
 };

@@ -1,4 +1,9 @@
-import { deleteOrders, getOrders, postCreateOrder } from "./services.js";
+import {
+  deleteOrders,
+  getOrders,
+  postCreateOrder,
+  exportOrders,
+} from "./services.js";
 import {
   HttpError,
   formatResponse,
@@ -62,15 +67,32 @@ export const handleDeleteOrders = async (req, res) => {
   try {
     const { orderIds } = req.body;
 
-    await deleteOrders({ orderIds });
+    // Extract userId from request if available
+    const userId = req.user?.userId || null;
 
-    return res
-      .status(200)
-      .json({ message: `${orderIds} successfully deleted` });
+    const result = await deleteOrders({ orderIds, userId });
+
+    return res.status(200).json(result);
   } catch (e) {
     if (e instanceof HttpError) {
       return res.status(e.status).json(formatErrorResponse(e.message));
     }
     return res.status(500).json(formatErrorResponse("Error deleting orders"));
+  }
+};
+
+export const handleExportOrders = async (req, res) => {
+  try {
+    const csvContent = await exportOrders();
+    
+    // Send as plain text with proper headers
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=orders_export_${new Date().toISOString().split('T')[0]}.csv`);
+    
+    // Send raw CSV content
+    return res.send(csvContent);
+  } catch (error) {
+    console.error("Error handling order export:", error);
+    res.status(500).json({ error: "Failed to export orders" });
   }
 };

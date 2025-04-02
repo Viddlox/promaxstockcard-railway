@@ -4,10 +4,24 @@ import {
   calculateTotalCost,
   sumBomChanges,
 } from "../../utils/orderCalculation.js";
+import { formatDate } from "../../utils/date.js";
 
 import { patchInventoryParts } from "../inventory/services.js";
 import { patchProducts } from "../products/services.js";
 import { prisma } from "../../../prisma/prisma.js";
+import { generateOrderEmailContent } from "../../emails/generateOrderEmailContent.js";
+import { sendAndCreateNotification } from "../notifications/services.js";
+import { generateOrderDeleteEmailContent } from "../../emails/generateOrderDeleteEmailContent.js";
+import { stringify } from "csv-stringify/sync";
+import NodeCache from "node-cache";
+
+// For less frequently changing data
+const orderCache = new NodeCache({
+  stdTTL: 3600, // 1 hour
+  checkperiod: 600, // Check every 10 minutes
+});
+
+const CACHE_KEY = "orders_export";
 
 export const getOrders = async ({ limit, cursor, search, role }) => {
   const { limitQuery, cursorQuery } = getLimitAndCursor({ limit, cursor });
@@ -307,6 +321,9 @@ export const postCreateOrder = async ({
         throw new HttpError(500, "Failed to update products");
       }
     }
+
+    let order;
+
     try {
       const orderData =
         orderType === "STOCK"
@@ -329,12 +346,43 @@ export const postCreateOrder = async ({
               modifications: bomChanges,
             };
 
-      await prisma.orders.create({
+      order = await prisma.orders.create({
         data: orderData,
       });
+
+      invalidateOrdersCache();
     } catch (error) {
       console.error("Failed to create order:", error);
       throw new HttpError(500, "Failed to create order in database");
+    }
+
+    try {
+      if (order) {
+        await sendAndCreateNotification({
+          type: orderType === "SALE" ? "ORDER_SALE" : "ORDER_STOCK",
+          title:
+            orderType === "SALE"
+              ? `New Sales Order: #${order.orderId}`
+              : `New Stock Order: #${order.orderId}`,
+          content:
+            orderType === "SALE"
+              ? `Sales order #${order.orderId} created for ${
+                  order.customerName || "customer"
+                } (RM ${totalAmount.toLocaleString(undefined, {
+                  maximumFractionDigits: 2,
+                })})`
+              : `Stock order #${order.orderId} created by ${salesAgent.fullName} with ${parsedOrderItems.length} item(s)`,
+          orderId: order.orderId,
+          html: generateOrderEmailContent({
+            orderType,
+            orderId: order.orderId,
+            orderData: order,
+          }),
+        });
+      }
+    } catch (error) {
+      console.error("Failed to send notification:", error);
+      throw new HttpError(500, "Failed to send notification");
     }
   } catch (error) {
     console.error("Order creation failed:", error);
@@ -342,16 +390,182 @@ export const postCreateOrder = async ({
   }
 };
 
-export const deleteOrders = async ({ orderIds = [] }) => {
+export const deleteOrders = async ({ orderIds = [], userId = null }) => {
   if (orderIds.length === 0) {
     throw new HttpError(400, "Missing required fields");
   }
 
-  await prisma.orders.deleteMany({
-    where: {
-      orderId: {
-        in: orderIds,
+  try {
+    // Get order details before deletion
+    const orders = await prisma.orders.findMany({
+      where: {
+        orderId: {
+          in: orderIds,
+        },
       },
-    },
-  });
+      select: {
+        orderId: true,
+        customerName: true,
+        salesAgentName: true,
+        totalAmount: true,
+        orderType: true,
+        createdAt: true,
+      },
+    });
+
+    if (orders.length === 0) {
+      throw new HttpError(404, "No orders found with the provided IDs");
+    }
+
+    // Get user information if userId is provided
+    let deletedBy = "A user";
+    if (userId) {
+      const user = await prisma.users.findUnique({
+        where: { userId },
+        select: { fullName: true },
+      });
+      if (user) deletedBy = user.fullName;
+    }
+
+    // Process each order individually - send notification then delete
+    const results = await Promise.all(
+      orders.map(async (order) => {
+        try {
+          // Send notification for this specific order
+          await sendAndCreateNotification({
+            type: "ORDER_DELETE",
+            title: `Order Deleted: #${order.orderId}`,
+            content: `Order #${order.orderId} has been deleted`,
+            orderId: order.orderId,
+            html: generateOrderDeleteEmailContent({
+              orderId: order.orderId,
+              orderDetails: order,
+              deletedBy,
+            }),
+          });
+          console.log(`Order deletion notification sent for ${order.orderId}`);
+
+          // Delete this specific order
+          await prisma.orders.delete({
+            where: { orderId: order.orderId },
+          });
+
+          return { orderId: order.orderId, success: true };
+        } catch (error) {
+          console.error(
+            `Error processing deletion for order ${order.orderId}:`,
+            error
+          );
+          return {
+            orderId: order.orderId,
+            success: false,
+            error: error.message,
+          };
+        }
+      })
+    );
+
+    const successfulDeletions = results.filter((r) => r.success);
+    const failedDeletions = results.filter((r) => !r.success);
+
+    if (successfulDeletions.length > 0) {
+      invalidateOrdersCache();
+    }
+
+    return {
+      message: `${successfulDeletions.length} orders deleted successfully`,
+      deleted: successfulDeletions.map((r) => r.orderId),
+      failed: failedDeletions.length > 0 ? failedDeletions : undefined,
+    };
+  } catch (error) {
+    console.error("Error deleting orders:", error);
+    if (error instanceof HttpError) {
+      throw error;
+    }
+    throw new HttpError(500, "Failed to delete orders");
+  }
+};
+
+export const exportOrders = async () => {
+  try {
+    let orders;
+
+    // Try to get data from cache first
+    const cachedOrders = orderCache.get(CACHE_KEY);
+    if (cachedOrders) {
+      console.log("Serving orders from cache");
+      orders = cachedOrders;
+    }
+
+    // If no cache or cache disabled, fetch from database
+    if (!orders) {
+      console.log("Fetching orders from database");
+      orders = await prisma.orders.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      // Store in cache for future requests
+      orderCache.set(CACHE_KEY, orders);
+    }
+
+    // Create properly formatted array for CSV
+    const formattedOrders = orders.map((order) => {
+      return {
+        "Order ID": order.orderId,
+        Type: order.orderType,
+        Customer: order.customerName || "N/A",
+        "Sales Agent": order.salesAgentName,
+        "Total Amount": order.totalAmount
+          ? `RM ${order.totalAmount.toFixed(2)}`
+          : "N/A",
+        "Payment Method": order.paymentMethod || "N/A",
+        "Items Count": order.orderItems?.length || 0,
+        "Created At": formatDate(order.createdAt),
+        "Order Items": order.orderItems
+          ? order.orderItems
+              .map(
+                (item) =>
+                  `${item.productName || item.partName || "Unknown"} (${
+                    item.quantity
+                  })`
+              )
+              .join("; ")
+          : "None",
+      };
+    });
+
+    // Explicitly define columns for consistent order
+    const columns = [
+      "Order ID",
+      "Type",
+      "Customer",
+      "Sales Agent",
+      "Total Amount",
+      "Payment Method",
+      "Items Count",
+      "Created At",
+      "Order Items",
+    ];
+
+    // Generate CSV string with explicit options
+    const csvContent = stringify(formattedOrders, {
+      header: true,
+      columns: columns,
+      record_delimiter: "windows",
+      quoted: true, // Force quotes around all fields
+      quoted_empty: true,
+    });
+
+    return csvContent;
+  } catch (error) {
+    console.error("Error exporting orders:", error);
+    throw error;
+  }
+};
+
+// Function to manually invalidate cache (use after order updates)
+export const invalidateOrdersCache = () => {
+  orderCache.del(CACHE_KEY);
 };
