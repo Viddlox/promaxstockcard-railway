@@ -52,6 +52,7 @@ model Products {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @default(now()) @updatedAt
   orderRedirectUrl String?
+  reorderPoint     Int      @default(50)
 
   notifications Notifications[]
 
@@ -67,6 +68,7 @@ model Inventory {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @default(now()) @updatedAt
   orderRedirectUrl String?
+  reorderPoint     Int      @default(50)
 
   notifications Notifications[]
 

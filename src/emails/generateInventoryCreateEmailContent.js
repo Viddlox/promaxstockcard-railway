@@ -14,7 +14,8 @@ export const generateInventoryCreateEmailContent = ({
   partId, 
   itemQuantity,
   partUoM = "UNIT",
-  createdBy = "A user"
+  createdBy = "A user",
+  reorderPoint = 50,
 }) => {
   const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
   const encodedId = encodeURIComponent(partId);
@@ -61,7 +62,7 @@ export const generateInventoryCreateEmailContent = ({
         <p><strong>Unit of Measure:</strong> ${partUoM}</p>
       </div>
       
-      ${itemQuantity <= 50 ? `
+      ${itemQuantity <= reorderPoint ? `
       <div style="background-color: #fff8e1; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
         <h3 style="margin-top: 0; color: #333; font-size: 16px;">Low Stock Warning</h3>
         <p style="margin-bottom: 0;">This part was added with a low quantity (${itemQuantity} ${partUoM}). Consider ordering more inventory soon.</p>

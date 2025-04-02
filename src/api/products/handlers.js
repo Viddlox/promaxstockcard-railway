@@ -4,6 +4,7 @@ import {
   deleteProducts,
   patchProduct,
   exportProducts,
+  getProductsList,
 } from "./services.js";
 import {
   HttpError,
@@ -34,7 +35,8 @@ export const handleGetProducts = async (req, res) => {
 
 export const handlePostCreateProduct = async (req, res) => {
   try {
-    const { productId, productName, basePrice, quantity, bom } = req.body;
+    const { productId, productName, basePrice, quantity, bom, reorderPoint } =
+      req.body;
 
     // Safely extract user information
     const userId = req.user?.userId || null;
@@ -46,6 +48,7 @@ export const handlePostCreateProduct = async (req, res) => {
       quantity,
       bom,
       userId,
+      reorderPoint,
     });
 
     res.status(201).json({ data });
@@ -76,7 +79,8 @@ export const handleDeleteProducts = async (req, res) => {
 
 export const handlePatchProduct = async (req, res) => {
   try {
-    const { productId, productName, basePrice, quantity, bom } = req.body;
+    const { productId, productName, basePrice, quantity, bom, reorderPoint } =
+      req.body;
     const { userId } = req.user;
 
     const data = await patchProduct({
@@ -86,6 +90,7 @@ export const handlePatchProduct = async (req, res) => {
       quantity,
       bom,
       userId,
+      reorderPoint,
     });
 
     return res.status(200).json({ data });
@@ -100,15 +105,30 @@ export const handlePatchProduct = async (req, res) => {
 export const handleExportProducts = async (req, res) => {
   try {
     const csvContent = await exportProducts();
-    
+
     // Set proper headers with charset
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename=products_export_${new Date().toISOString().split('T')[0]}.csv`);
-    
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=products_export_${
+        new Date().toISOString().split("T")[0]
+      }.csv`
+    );
+
     // Send as plain text
     res.send(csvContent);
   } catch (error) {
     console.error("Error handling product export:", error);
     res.status(500).json({ error: "Failed to export products" });
+  }
+};
+
+export const handleGetProductsList = async (req, res) => {
+  try {
+    const products = await getProductsList();
+    res.status(200).json(products);
+  } catch (error) {
+    console.error("Error fetching products list:", error);
+    res.status(500).json({ error: "Failed to fetch products list" });
   }
 };

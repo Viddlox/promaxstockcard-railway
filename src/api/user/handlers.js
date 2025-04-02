@@ -38,9 +38,9 @@ export const handleGetUsers = async (req, res) => {
 
 export const handleCreateUser = async (req, res) => {
   try {
-    const { email, fullName, role } = req.body;
+    const { email, fullName, role, password } = req.body;
 
-    const data = await createUser({ email, fullName, role });
+    const data = await createUser({ email, fullName, role, password });
 
     res.status(201).json({ data });
   } catch (e) {
@@ -114,9 +114,9 @@ export const generateTokensHandler = async (req, res) => {
 
 export const handleUpdateUser = async (req, res) => {
   try {
-    const { userId, email, fullName, role } = req.body;
+    const { userId, email, fullName, role, password } = req.body;
 
-    const data = await patchUser({ userId, email, fullName, role });
+    const data = await patchUser({ userId, email, fullName, role, password });
 
     return res.status(200).json({ data });
   } catch (e) {

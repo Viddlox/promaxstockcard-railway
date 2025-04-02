@@ -8,6 +8,7 @@ import {
   createCustomer,
   updateCustomer,
   deleteCustomers,
+  getCustomersList,
 } from "./services.js";
 
 export const handleGetCustomers = async (req, res) => {
@@ -101,5 +102,19 @@ export const handleDeleteCustomers = async (req, res) => {
     return res
       .status(500)
       .json(formatErrorResponse("Error deleting customers"));
+  }
+};
+
+export const handleGetCustomersList = async (req, res) => {
+  try {
+    const customers = await getCustomersList();
+    res.status(200).json(customers);
+  } catch (e) {
+    if (e instanceof HttpError) {
+      return res.status(e.status).json(formatErrorResponse(e.message));
+    }
+    return res
+      .status(500)
+      .json(formatErrorResponse("Error getting customers list"));
   }
 };

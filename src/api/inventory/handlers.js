@@ -4,6 +4,7 @@ import {
   deleteInventoryParts,
   patchInventoryPart,
   exportInventory,
+  getInventoryList,
 } from "./services.js";
 
 import {
@@ -35,8 +36,9 @@ export const handleGetInventory = async (req, res) => {
 
 export const handlePostCreateInventoryPart = async (req, res) => {
   try {
-    const { partId, partName, partPrice, partQuantity, partUoM } = req.body;
-    
+    const { partId, partName, partPrice, partQuantity, partUoM, reorderPoint } =
+      req.body;
+
     // Safely extract user information
     const userId = req.user?.userId || null;
 
@@ -47,6 +49,7 @@ export const handlePostCreateInventoryPart = async (req, res) => {
       partQuantity,
       partUoM,
       userId,
+      reorderPoint,
     });
 
     return res.status(200).json({ data });
@@ -65,12 +68,12 @@ export const handlePostCreateInventoryPart = async (req, res) => {
 export const handleDeleteInventoryParts = async (req, res) => {
   try {
     const { partIds } = req.body;
-    
+
     // Extract userId from request if available
     const userId = req.user?.userId || null;
 
     const result = await deleteInventoryParts({ partIds, userId });
-    
+
     res.status(200).json(result);
   } catch (error) {
     const statusCode = error.statusCode || 500;
@@ -80,7 +83,8 @@ export const handleDeleteInventoryParts = async (req, res) => {
 
 export const handlePatchInventoryPart = async (req, res) => {
   try {
-    const { partId, partName, partPrice, partQuantity, partUoM } = req.body;
+    const { partId, partName, partPrice, partQuantity, partUoM, reorderPoint } =
+      req.body;
     const { userId } = req.user;
 
     const data = await patchInventoryPart({
@@ -89,6 +93,7 @@ export const handlePatchInventoryPart = async (req, res) => {
       partPrice,
       partQuantity,
       partUoM,
+      reorderPoint,
       isManualUpdate: true,
       userId,
     });
@@ -107,15 +112,30 @@ export const handlePatchInventoryPart = async (req, res) => {
 export const handleExportInventory = async (req, res) => {
   try {
     const csvContent = await exportInventory();
-    
+
     // Set proper headers with charset
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename=inventory_export_${new Date().toISOString().split('T')[0]}.csv`);
-    
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=inventory_export_${
+        new Date().toISOString().split("T")[0]
+      }.csv`
+    );
+
     // Send as plain text
     res.send(csvContent);
   } catch (error) {
     console.error("Error handling inventory export:", error);
     res.status(500).json({ error: "Failed to export inventory" });
+  }
+};
+
+export const handleGetInventoryList = async (req, res) => {
+  try {
+    const inventory = await getInventoryList();
+    res.status(200).json(inventory);
+  } catch (error) {
+    console.error("Error fetching inventory list:", error);
+    res.status(500).json({ error: "Failed to fetch inventory list" });
   }
 };

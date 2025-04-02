@@ -6,9 +6,10 @@ import { generateProductUpdateEmailContent } from "../../emails/generateProductU
 import { generateProductCreateEmailContent } from "../../emails/generateProductCreateEmailContent.js";
 import { generateProductDeleteEmailContent } from "../../emails/generateProductDeleteEmailContent.js";
 import { sendAndCreateNotification } from "../notifications/services.js";
-import NodeCache from 'node-cache';
-import { stringify } from 'csv-stringify/sync';
+import NodeCache from "node-cache";
+import { stringify } from "csv-stringify/sync";
 import { formatDate } from "../../utils/date.js";
+import { Prisma } from "@prisma/client";
 
 // Initialize cache
 const productCache = new NodeCache({
@@ -16,7 +17,37 @@ const productCache = new NodeCache({
   checkperiod: 600, // Check every 10 minutes
 });
 
-const CACHE_KEY = 'products_export';
+const CACHE_KEY = "products_export";
+
+export const getProductsList = async () => {
+  try {
+    let products;
+    // Try to get data from cache first
+    const cachedProducts = productCache.get(CACHE_KEY);
+    if (cachedProducts) {
+      console.log("Serving products from cache");
+      products = cachedProducts;
+    }
+
+    // If no cache or cache disabled, fetch from database
+    if (!products) {
+      console.log("Fetching products from database");
+      products = await prisma.products.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      // Store in cache for future requests
+      productCache.set(CACHE_KEY, products);
+    }
+
+    return products;
+  } catch (error) {
+    console.error("Error fetching products list:", error);
+    throw new HttpError(500, "Failed to fetch products list");
+  }
+};
 
 export const getProducts = async ({ limit, cursor, search = "" }) => {
   const { limitQuery, cursorQuery } = getLimitAndCursor({ limit, cursor });
@@ -74,13 +105,15 @@ export const postCreateProduct = async ({
   quantity = 1,
   bom = null,
   userId = null,
+  reorderPoint = 50,
 }) => {
   if (
     !productId ||
     !productName ||
     !basePrice ||
     quantity === undefined ||
-    !bom
+    !bom ||
+    reorderPoint === undefined
   ) {
     throw new HttpError(400, "Missing required fields");
   }
@@ -131,6 +164,7 @@ export const postCreateProduct = async ({
           basePrice,
           quantity: parseInt(quantity, 10),
           bom: parsedBom,
+          reorderPoint,
         },
       });
 
@@ -289,6 +323,7 @@ export const patchProducts = async ({ products, isSale = false }) => {
           productName: true,
           bom: true,
           productId: true,
+          reorderPoint: true,
         },
       });
 
@@ -343,6 +378,7 @@ export const patchProducts = async ({ products, isSale = false }) => {
           quantity: updatedQuantity,
           name: currentProduct.productName,
           productId: productId,
+          reorderPoint: currentProduct.reorderPoint,
         });
       }
     }
@@ -352,7 +388,7 @@ export const patchProducts = async ({ products, isSale = false }) => {
 
     // First, gather all the low stock notifications we need to send
     for (const [productId, productData] of finalProductQuantities.entries()) {
-      if (productData.quantity <= 50) {
+      if (productData.quantity <= productData.reorderPoint) {
         lowStockNotifications.push(
           sendAndCreateNotification({
             type: "LOW_STOCK",
@@ -408,25 +444,15 @@ export const patchProduct = async ({
   quantity,
   bom,
   userId,
+  reorderPoint = 50,
 }) => {
-  if (
-    !productId ||
-    !productName ||
-    !basePrice ||
-    quantity === undefined ||
-    !bom ||
-    !userId
-  ) {
+  if (!productId || !userId) {
     console.error("Validation error: Missing required fields");
     throw new HttpError(400, "Missing required fields");
   }
 
-  if (quantity < 0) {
-    console.error("Validation error: Quantity cannot be negative");
-    throw new HttpError(400, "Quantity cannot be negative");
-  }
-
   try {
+    // Fetch the existing product with all fields
     const existingProduct = await prisma.products.findUnique({
       where: { productId },
     });
@@ -435,35 +461,187 @@ export const patchProduct = async ({
       throw new HttpError(404, "Product not found");
     }
 
-    const prevQuantity = existingProduct.quantity;
+    // Validate inputs
+    if (quantity !== undefined && quantity < 0) {
+      throw new HttpError(400, "Quantity cannot be negative");
+    }
 
+    if (reorderPoint !== undefined && reorderPoint < 0) {
+      throw new HttpError(400, "Reorder point cannot be negative");
+    }
+
+    // Initialize the array for formatted changes FIRST
+    const formattedChanges = [];
+    
+    // Build update data with proper type handling
+    const updateData = {};
+
+    if (
+      productName !== undefined &&
+      productName !== existingProduct.productName
+    ) {
+      updateData.productName = productName;
+      formattedChanges.push({
+        field: "productName",
+        oldValue: existingProduct.productName,
+        newValue: productName,
+        displayName: "Product Name",
+      });
+    }
+
+    // Handle Decimal comparison properly for basePrice
+    if (basePrice !== undefined) {
+      const existingPrice = existingProduct.basePrice.toString();
+      const newPrice = new Prisma.Decimal(basePrice).toString();
+
+      if (existingPrice !== newPrice) {
+        updateData.basePrice = basePrice;
+        formattedChanges.push({
+          field: "basePrice",
+          oldValue: existingProduct.basePrice,
+          newValue: basePrice,
+          displayName: "Base Price",
+        });
+      }
+    }
+
+    if (quantity !== undefined) {
+      const newQuantity = Number(quantity);
+      if (newQuantity !== existingProduct.quantity) {
+        updateData.quantity = newQuantity;
+        formattedChanges.push({
+          field: "quantity",
+          oldValue: existingProduct.quantity,
+          newValue: newQuantity,
+          displayName: "Quantity",
+        });
+      }
+    }
+
+    if (reorderPoint !== undefined) {
+      const newReorderPoint = Number(reorderPoint);
+      if (newReorderPoint !== existingProduct.reorderPoint) {
+        updateData.reorderPoint = newReorderPoint;
+        formattedChanges.push({
+          field: "reorderPoint",
+          oldValue: existingProduct.reorderPoint,
+          newValue: newReorderPoint,
+          displayName: "Reorder Point",
+        });
+      }
+    }
+
+    // Special handling for BOM comparison
+    if (bom !== undefined) {
+      const existingBom = existingProduct.bom || [];
+      const newBom = bom || [];
+      
+      // First check if they're different at all
+      const existingBomString = JSON.stringify(existingBom);
+      const newBomString = JSON.stringify(newBom);
+      
+      if (existingBomString !== newBomString) {
+        updateData.bom = bom;
+        
+        // Find added parts
+        const addedParts = newBom.filter(newPart => 
+          !existingBom.some(existingPart => 
+            existingPart.partId === newPart.partId
+          )
+        );
+        
+        // Find removed parts
+        const removedParts = existingBom.filter(existingPart => 
+          !newBom.some(newPart => 
+            newPart.partId === existingPart.partId
+          )
+        );
+        
+        // Find modified parts (same ID but different quantity)
+        const modifiedParts = newBom.filter(newPart => 
+          existingBom.some(existingPart => 
+            existingPart.partId === newPart.partId && 
+            existingPart.quantity !== newPart.quantity
+          )
+        ).map(newPart => {
+          const oldPart = existingBom.find(part => part.partId === newPart.partId);
+          return {
+            ...newPart,
+            oldQuantity: oldPart.quantity
+          };
+        });
+        
+        // Create a detailed BOM change entry
+        formattedChanges.push({
+          field: "bom",
+          oldValue: `${existingBom.length} components`,
+          newValue: `${newBom.length} components`,
+          displayName: "Bill of Materials",
+          details: {
+            added: addedParts,
+            removed: removedParts,
+            modified: modifiedParts
+          }
+        });
+      }
+    }
+
+    // If nothing changed, return existing product without updating the database
+    if (Object.keys(updateData).length === 0) {
+      console.log(`No changes detected for product ${productId}`);
+      return existingProduct;
+    }
+
+    console.log(`Updating product ${productId} with changes:`, updateData);
+
+    // Update the product with only changed fields
     const updatedProduct = await prisma.products.update({
       where: { productId },
-      data: { productName, basePrice, quantity, bom },
+      data: updateData,
     });
 
-    // Add notification and log entry for manual updates
+    // Get user info for the notification
     const user = await prisma.users.findUnique({
       where: { userId },
       select: { fullName: true },
     });
 
+    // Generate a human-readable summary for the notification content
+    const content = generateChangeSummary(
+      formattedChanges,
+      updatedProduct.productName
+    );
+
+    // Send change notification
     await sendAndCreateNotification({
       type: "PRODUCT_UPDATE",
       title: `Product Updated: ${updatedProduct.productName}`,
-      content: `Product ${updatedProduct.productName} has been updated from ${prevQuantity} to ${updatedProduct.quantity} units`,
+      content: content,
       productId: updatedProduct.productId,
       html: generateProductUpdateEmailContent({
         productName: updatedProduct.productName,
         productId: updatedProduct.productId,
-        prevQuantity,
-        newQuantity: updatedProduct.quantity,
+        changes: formattedChanges,
         updatedBy: user?.fullName || "A user",
       }),
     });
 
-    // Check if product quantity is low (50 or less) and notify at every 10th unit OR first drop below 50
-    if (updatedProduct.quantity <= 50) {
+    // Check if quantity changed and is below reorder point
+    const quantityChanged = updateData.hasOwnProperty("quantity");
+    const nowBelowReorderPoint =
+      updatedProduct.quantity <= updatedProduct.reorderPoint;
+    const wasPreviouslyAboveReorderPoint =
+      existingProduct.quantity > existingProduct.reorderPoint;
+
+    // Send low stock notification only when appropriate
+    const reorderPointChanged = updateData.hasOwnProperty("reorderPoint");
+
+    if (
+      (quantityChanged &&
+        nowBelowReorderPoint &&
+        wasPreviouslyAboveReorderPoint) ||
+      (reorderPointChanged && nowBelowReorderPoint)
+    ) {
       await sendAndCreateNotification({
         type: "LOW_STOCK",
         title: `Low Stock Alert: ${updatedProduct.productName}`,
@@ -477,12 +655,73 @@ export const patchProduct = async ({
         }),
       });
     }
-    invalidateProductsCache();
 
+    invalidateProductsCache();
     return updatedProduct;
   } catch (error) {
     console.error("Unexpected error in patchProduct:", error);
+    if (error instanceof HttpError) {
+      throw error;
+    }
     throw new HttpError(500, "Internal server error");
+  }
+};
+
+/**
+ * Generates a human-readable summary of changes for notifications
+ * @param {Array} changes - Array of change objects with field, oldValue, newValue, displayName
+ * @param {string} productName - Name of the product being updated
+ * @returns {string} - A formatted summary of changes
+ */
+const generateChangeSummary = (changes, productName) => {
+  if (!changes.length) return `Product ${productName} has been updated`;
+
+  // Create a readable summary based on the number of changes
+  if (changes.length === 1) {
+    const change = changes[0];
+
+    // Handle quantity changes with special formatting
+    if (change.field === "quantity") {
+      const direction =
+        Number(change.newValue) > Number(change.oldValue)
+          ? "increased"
+          : "decreased";
+      const diff = Math.abs(Number(change.newValue) - Number(change.oldValue));
+      return `${productName}'s quantity ${direction} by ${diff} units (from ${change.oldValue} to ${change.newValue})`;
+    }
+
+    // Handle price changes with special formatting
+    if (change.field === "basePrice") {
+      return `${productName}'s price changed from RM${Number(
+        change.oldValue
+      ).toFixed(2)} to RM${Number(change.newValue).toFixed(2)}`;
+    }
+
+    // Handle BOM changes
+    if (change.field === "bom" && change.details) {
+      const { added, removed, modified } = change.details;
+      const changes = [];
+      
+      if (added.length > 0) changes.push(`added ${added.length} components`);
+      if (removed.length > 0) changes.push(`removed ${removed.length} components`);
+      if (modified.length > 0) changes.push(`modified ${modified.length} components`);
+      
+      return `${productName}'s bill of materials has been updated: ${changes.join(', ')}`;
+    }
+
+    // Default formatting for other fields
+    return `${productName}'s ${change.displayName.toLowerCase()} changed from "${
+      change.oldValue
+    }" to "${change.newValue}"`;
+  } else if (changes.length === 2) {
+    // For two changes, list both specifically
+    const fieldNames = changes
+      .map((c) => c.displayName.toLowerCase())
+      .join(" and ");
+    return `${productName}'s ${fieldNames} have been updated`;
+  } else {
+    // For more than two changes, summarize the number
+    return `${productName} has been updated with changes to ${changes.length} fields`;
   }
 };
 
@@ -513,23 +752,30 @@ export const exportProducts = async () => {
     // Create properly formatted array for CSV
     const formattedProducts = products.map((product) => {
       // Format BOM to be more readable
-      const formattedBOM = product.bom && product.bom.length 
-        ? product.bom.map(item => 
-            `${item.partName || item.partId || 'Unknown'} (${item.quantity || 0} ${item.partUoM || 'unit'})`
-          ).join("; ")
-        : "None";
+      const formattedBOM =
+        product.bom && product.bom.length
+          ? product.bom
+              .map(
+                (item) =>
+                  `${item.partName || item.partId || "Unknown"} (${
+                    item.quantity || 0
+                  } ${item.partUoM || "unit"})`
+              )
+              .join("; ")
+          : "None";
 
       return {
         "Product ID": product.productId,
         "Product Name": product.productName,
-        "Quantity": product.quantity,
-        "Base Price": product.basePrice 
-          ? `RM ${product.basePrice.toFixed(2)}` 
+        Quantity: product.quantity,
+        "Base Price": product.basePrice
+          ? `RM ${product.basePrice.toFixed(2)}`
           : "N/A",
         "Created At": formatDate(product.createdAt),
         "Last Updated": formatDate(product.updatedAt),
         "BOM Items": formattedBOM,
         "BOM Count": product.bom?.length || 0,
+        "Reorder Point": product.reorderPoint || 50,
       };
     });
 
@@ -542,7 +788,8 @@ export const exportProducts = async () => {
       "Created At",
       "Last Updated",
       "BOM Count",
-      "BOM Items"
+      "BOM Items",
+      "Reorder Point",
     ];
 
     // Generate CSV string with explicit options

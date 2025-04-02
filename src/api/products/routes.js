@@ -5,16 +5,18 @@ import {
   handleDeleteProducts,
   handlePatchProduct,
   handleExportProducts,
+  handleGetProductsList,
 } from "./handlers.js";
 import { authorizeRole } from "../../middleware/index.js";
 
 const router = Router();
 
 router.get(
-  "/",
+  "/list",
   authorizeRole(["STORE", "ADMIN", "SALES", "OWNER"]),
-  handleGetProducts
+  handleGetProductsList
 );
+router.get("/", authorizeRole(["ADMIN", "SALES", "OWNER"]), handleGetProducts);
 router.post(
   "/create",
   authorizeRole(["ADMIN", "OWNER"]),

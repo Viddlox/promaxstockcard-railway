@@ -4,13 +4,19 @@ import {
   handleCreateCustomer,
   handleUpdateCustomer,
   handleDeleteCustomers,
+  handleGetCustomersList,
 } from "./handlers.js";
 
 import { authorizeRole } from "../../middleware/index.js";
 
 const router = Router();
 
-router.get("/", authorizeRole(["ADMIN", "SALES", "OWNER"]), handleGetCustomers);
+router.get(
+  "/list",
+  authorizeRole(["ADMIN", "SALES", "OWNER"]),
+  handleGetCustomersList
+);
+router.get("/", authorizeRole(["ADMIN", "OWNER"]), handleGetCustomers);
 router.post("/create", authorizeRole(["ADMIN", "OWNER"]), handleCreateCustomer);
 router.patch(
   "/update",

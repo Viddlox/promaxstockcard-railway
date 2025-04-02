@@ -9,9 +9,11 @@ import { generateInventoryCreateEmailContent } from "../../emails/generateInvent
 import { generateInventoryDeleteEmailContent } from "../../emails/generateInventoryDeleteEmailContent.js";
 
 // Import Node Cache if not already imported
-import NodeCache from 'node-cache';
-import { stringify } from 'csv-stringify/sync';
+import NodeCache from "node-cache";
+import { stringify } from "csv-stringify/sync";
 import { formatDate } from "../../utils/date.js";
+import { Prisma } from "@prisma/client";
+import { generateChangeSummary } from "../../utils/mutation.js";
 
 // Initialize cache
 const inventoryCache = new NodeCache({
@@ -19,7 +21,37 @@ const inventoryCache = new NodeCache({
   checkperiod: 600, // Check every 10 minutes
 });
 
-const CACHE_KEY = 'inventory_export';
+const CACHE_KEY = "inventory_export";
+
+export const getInventoryList = async () => {
+  try {
+    let inventory;
+    // Try to get data from cache first
+    const cachedInventory = inventoryCache.get(CACHE_KEY);
+    if (cachedInventory) {
+      console.log("Serving inventory from cache");
+      inventory = cachedInventory;
+    }
+
+    // If no cache or cache disabled, fetch from database
+    if (!inventory) {
+      console.log("Fetching inventory from database");
+      inventory = await prisma.inventory.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      // Store in cache for future requests
+      inventoryCache.set(CACHE_KEY, inventory);
+    }
+
+    return inventory;
+  } catch (error) {
+    console.error("Error fetching inventory list:", error);
+    throw new HttpError(500, "Failed to fetch inventory list");
+  }
+};
 
 export const getInventory = async ({ limit, cursor, search = "" }) => {
   const { limitQuery, cursorQuery } = getLimitAndCursor({ limit, cursor });
@@ -77,8 +109,15 @@ export const postCreateInventoryPart = async ({
   partQuantity,
   partUoM = "UNIT",
   userId = null,
+  reorderPoint = 50,
 }) => {
-  if (!partId || !partName || !partPrice || partQuantity === undefined) {
+  if (
+    !partId ||
+    !partName ||
+    !partPrice ||
+    partQuantity === undefined ||
+    reorderPoint === undefined
+  ) {
     throw new HttpError(400, "Missing required fields");
   }
 
@@ -96,6 +135,7 @@ export const postCreateInventoryPart = async ({
         if (user) createdBy = user.fullName;
       }
 
+      invalidateInventoryCache();
       // Create the inventory part
       return await tx.inventory.create({
         data: {
@@ -104,10 +144,9 @@ export const postCreateInventoryPart = async ({
           partPrice,
           partQuantity: parseInt(partQuantity, 10),
           partUoM,
+          reorderPoint,
         },
       });
-      
-      invalidateInventoryCache();
     });
 
     // Now that the part is created and committed, send the notification
@@ -122,6 +161,7 @@ export const postCreateInventoryPart = async ({
         itemQuantity: newInventoryPart.partQuantity,
         partUoM: newInventoryPart.partUoM,
         createdBy,
+        reorderPoint: newInventoryPart.reorderPoint,
       }),
     });
 
@@ -255,7 +295,12 @@ export const patchInventoryParts = async ({
     for (const { partId, quantity } of inventoryParts) {
       const currentPart = await prisma.inventory.findUnique({
         where: { partId },
-        select: { partQuantity: true, partName: true, partId: true },
+        select: {
+          partQuantity: true,
+          partName: true,
+          partId: true,
+          reorderPoint: true,
+        },
       });
 
       if (!currentPart) {
@@ -283,25 +328,29 @@ export const patchInventoryParts = async ({
       updatedPartsData.push({
         previousQuantity: currentPart.partQuantity,
         currentPart: currentPart,
-        updatedPart: updatedPart
+        updatedPart: updatedPart,
       });
 
       // Check if we need to update our map with the lowest quantity
-      if (!finalPartQuantities.has(partId) || updatedQuantity < finalPartQuantities.get(partId).quantity) {
+      if (
+        !finalPartQuantities.has(partId) ||
+        updatedQuantity < finalPartQuantities.get(partId).quantity
+      ) {
         finalPartQuantities.set(partId, {
           quantity: updatedQuantity,
           name: currentPart.partName,
-          partId: partId
+          partId: partId,
+          reorderPoint: currentPart.reorderPoint,
         });
       }
     }
 
     // After all DB operations, send notifications for low stock items ONCE per part
     const lowStockNotifications = [];
-    
+
     // First, gather all the low stock notifications we need to send
     for (const [partId, partData] of finalPartQuantities.entries()) {
-      if (partData.quantity <= 50) {
+      if (partData.quantity <= partData.reorderPoint) {
         lowStockNotifications.push(
           sendAndCreateNotification({
             type: "LOW_STOCK",
@@ -314,22 +363,27 @@ export const patchInventoryParts = async ({
               itemQuantity: partData.quantity,
               itemType: "part",
             }),
-          }).catch(error => {
-            console.error(`Failed to send low stock notification for ${partId}:`, error);
+          }).catch((error) => {
+            console.error(
+              `Failed to send low stock notification for ${partId}:`,
+              error
+            );
           })
         );
       }
     }
-    
+
     // Send all low stock notifications in parallel
     if (lowStockNotifications.length > 0) {
       await Promise.all(lowStockNotifications);
-      console.log(`Sent ${lowStockNotifications.length} low stock notifications`);
+      console.log(
+        `Sent ${lowStockNotifications.length} low stock notifications`
+      );
     }
 
     // Return the list of updated parts
     invalidateInventoryCache();
-    return updatedPartsData.map(data => data.updatedPart);
+    return updatedPartsData.map((data) => data.updatedPart);
   } catch (error) {
     if (error instanceof HttpError) {
       throw error;
@@ -345,67 +399,174 @@ export const patchInventoryPart = async ({
   partQuantity,
   partUoM,
   userId,
+  reorderPoint = 50,
+  orderRedirectUrl,
 }) => {
-  if (
-    !partId ||
-    !partName ||
-    !partPrice ||
-    partQuantity === undefined ||
-    !partUoM ||
-    !userId
-  ) {
+  if (!partId || !userId) {
     throw new HttpError(400, "Missing required fields");
   }
 
-  if (partQuantity < 0) {
-    throw new HttpError(400, "Quantity cannot be negative");
-  }
-
   try {
-    // First perform the database operations in a transaction
+    // Fetch the existing part with all fields
     const existingPart = await prisma.inventory.findUnique({
       where: { partId },
-      select: { partQuantity: true },
     });
 
     if (!existingPart) {
       throw new HttpError(404, "Part not found");
     }
 
-    const prevQuantity = existingPart.partQuantity;
+    // Build update data with proper type handling
+    const updateData = {};
 
+    if (partName !== undefined && partName !== existingPart.partName) {
+      updateData.partName = partName;
+    }
+
+    // Handle Decimal comparison properly for partPrice
+    if (partPrice !== undefined) {
+      // Convert to same format for comparison (string comparison for Decimal)
+      const existingPrice = existingPart.partPrice.toString();
+      const newPrice = new Prisma.Decimal(partPrice).toString();
+
+      if (existingPrice !== newPrice) {
+        updateData.partPrice = partPrice;
+      }
+    }
+
+    if (partQuantity !== undefined) {
+      const newQuantity = Number(partQuantity);
+      if (newQuantity !== existingPart.partQuantity) {
+        updateData.partQuantity = newQuantity;
+      }
+    }
+
+    if (partUoM !== undefined && partUoM !== existingPart.partUoM) {
+      updateData.partUoM = partUoM;
+    }
+
+    if (reorderPoint !== undefined) {
+      const newReorderPoint = Number(reorderPoint);
+      if (newReorderPoint !== existingPart.reorderPoint) {
+        updateData.reorderPoint = newReorderPoint;
+      }
+    }
+
+    if (
+      orderRedirectUrl !== undefined &&
+      orderRedirectUrl !== existingPart.orderRedirectUrl
+    ) {
+      updateData.orderRedirectUrl = orderRedirectUrl;
+    }
+
+    // If nothing changed, return existing part without updating the database
+    if (Object.keys(updateData).length === 0) {
+      console.log(`No changes detected for part ${partId}`);
+      return existingPart;
+    }
+
+    console.log(`Updating part ${partId} with changes:`, updateData);
+
+    // Update the part with only changed fields
     const updatedPart = await prisma.inventory.update({
       where: { partId },
-      data: {
-        partName,
-        partPrice,
-        partQuantity: Number(partQuantity),
-        partUoM,
-      },
+      data: updateData,
     });
 
+    // Get user info for the notification
     const user = await prisma.users.findUnique({
       where: { userId },
       select: { fullName: true },
     });
 
-    // After transaction is complete, send notifications separately
+    // Track changes for email with proper formatting
+    const formattedChanges = [];
+
+    // Add each changed field with proper formatting
+    if (updateData.partName) {
+      formattedChanges.push({
+        field: "partName",
+        oldValue: existingPart.partName,
+        newValue: updateData.partName,
+        displayName: "Part Name",
+      });
+    }
+
+    if (updateData.partPrice) {
+      formattedChanges.push({
+        field: "partPrice",
+        oldValue: existingPart.partPrice,
+        newValue: updateData.partPrice,
+        displayName: "Unit Price",
+      });
+    }
+
+    if (updateData.partQuantity !== undefined) {
+      formattedChanges.push({
+        field: "partQuantity",
+        oldValue: existingPart.partQuantity,
+        newValue: updateData.partQuantity,
+        displayName: "Quantity",
+      });
+    }
+
+    if (updateData.partUoM) {
+      formattedChanges.push({
+        field: "partUoM",
+        oldValue: existingPart.partUoM,
+        newValue: updateData.partUoM,
+        displayName: "Unit of Measure",
+      });
+    }
+
+    if (updateData.reorderPoint !== undefined) {
+      formattedChanges.push({
+        field: "reorderPoint",
+        oldValue: existingPart.reorderPoint,
+        newValue: updateData.reorderPoint,
+        displayName: "Reorder Point",
+      });
+    }
+
+    if (updateData.orderRedirectUrl !== undefined) {
+      formattedChanges.push({
+        field: "orderRedirectUrl",
+        oldValue: existingPart.orderRedirectUrl || "None",
+        newValue: updateData.orderRedirectUrl || "None",
+        displayName: "Order Redirect URL",
+      });
+    }
+
+    // Send change notification
     await sendAndCreateNotification({
       type: "INVENTORY_UPDATE",
       title: `Inventory Part Updated: ${updatedPart.partName}`,
-      content: `Part ${updatedPart.partName} has been updated from ${prevQuantity} to ${updatedPart.partQuantity} units`,
+      content: generateChangeSummary(formattedChanges, updatedPart.partName),
       partId: updatedPart.partId,
       html: generateInventoryUpdateEmailContent({
         partName: updatedPart.partName,
         partId: updatedPart.partId,
-        prevQuantity,
-        newQuantity: updatedPart.partQuantity,
+        changes: formattedChanges,
         updatedBy: user?.fullName || "A user",
       }),
     });
 
-    // Check if inventory level is low and send notification
-    if (updatedPart.partQuantity <= 50) {
+    // Check if quantity changed and is below reorder point
+    const quantityChanged = updateData.hasOwnProperty("partQuantity");
+    const nowBelowReorderPoint =
+      updatedPart.partQuantity <= updatedPart.reorderPoint;
+    const wasPreviouslyAboveReorderPoint =
+      existingPart.partQuantity > existingPart.reorderPoint;
+
+    // Send low stock notification only when appropriate
+    const reorderPointChanged = updateData.hasOwnProperty("reorderPoint");
+
+    if (
+      (quantityChanged &&
+        nowBelowReorderPoint &&
+        wasPreviouslyAboveReorderPoint) ||
+      (reorderPointChanged && nowBelowReorderPoint)
+    ) {
       await sendAndCreateNotification({
         type: "LOW_STOCK",
         title: `Low Stock Alert: ${updatedPart.partName}`,
@@ -421,7 +582,6 @@ export const patchInventoryPart = async ({
     }
 
     invalidateInventoryCache();
-
     return updatedPart;
   } catch (error) {
     console.error("Error updating inventory part:", error);
@@ -461,11 +621,12 @@ export const exportInventory = async () => {
       return {
         "Part ID": item.partId,
         "Part Name": item.partName,
-        "Unit Price": item.partPrice 
-          ? `RM ${item.partPrice.toFixed(2)}` 
+        "Unit Price": item.partPrice
+          ? `RM ${item.partPrice.toFixed(2)}`
           : "N/A",
-        "Quantity": item.partQuantity || 0,
+        Quantity: item.partQuantity || 0,
         "Unit of Measure": item.partUoM || "UNIT",
+        "Reorder Point": item.reorderPoint || 50,
         "Created At": formatDate(item.createdAt),
         "Last Updated": formatDate(item.updatedAt),
       };
@@ -478,6 +639,7 @@ export const exportInventory = async () => {
       "Unit Price",
       "Quantity",
       "Unit of Measure",
+      "Reorder Point",
       "Created At",
       "Last Updated",
     ];

@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import { promisify } from "util";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 const { verify, decode } = jwt;
@@ -9,8 +8,6 @@ import { HttpError } from "../../utils/http.js";
 import { getLimitAndCursor } from "../../utils/query.js";
 import { generateAccessToken, generateRefreshToken } from "../../utils/user.js";
 import { jwtSecret } from "../../config/variables.js";
-
-const randomBytesAsync = promisify(crypto.randomBytes);
 
 export const getUsers = async ({
   limit,
@@ -85,8 +82,13 @@ export const getUsers = async ({
   }
 };
 
-export const createUser = async ({ email = "", fullName, role }) => {
-  if (!role || !fullName) {
+export const createUser = async ({
+  email = "",
+  password = "",
+  fullName,
+  role,
+}) => {
+  if (!role || !fullName || !password) {
     throw new HttpError(400, "Missing required fields");
   }
 
@@ -99,8 +101,7 @@ export const createUser = async ({ email = "", fullName, role }) => {
     if (!existingUser) isUnique = true;
   }
 
-  const rawPassword = (await randomBytesAsync(6)).toString("hex");
-  const hashedPassword = await bcrypt.hash(rawPassword, 10);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const newUser = await prisma.users.create({
     data: {
@@ -112,7 +113,7 @@ export const createUser = async ({ email = "", fullName, role }) => {
     },
   });
 
-  return { newUser, rawPassword };
+  return { newUser, password };
 };
 
 export const deleteUser = async ({ userIds = [] }) => {
@@ -193,6 +194,8 @@ export const signIn = async ({ username, password, refreshToken }) => {
 };
 
 export const signOut = async ({ userId, refreshToken }) => {
+  console.log("userId", userId);
+  console.log("refreshToken", refreshToken);
   const user = await prisma.users.findFirst({
     where: { userId: userId },
     select: { refreshTokens: true },
@@ -289,8 +292,14 @@ export const generateTokens = async ({ refreshToken }) => {
   });
 };
 
-export const patchUser = async ({ userId, email, fullName, role }) => {
-  if (!userId || !fullName || !role) {
+export const patchUser = async ({
+  userId,
+  email,
+  fullName,
+  password,
+  role,
+}) => {
+  if (!userId || !fullName || !role || !password) {
     throw new HttpError(400, "Missing required fields");
   }
 
@@ -302,7 +311,7 @@ export const patchUser = async ({ userId, email, fullName, role }) => {
 
   const updatedUser = await prisma.users.update({
     where: { userId },
-    data: { fullName, role, email },
+    data: { fullName, role, email, password },
   });
 
   return updatedUser;
