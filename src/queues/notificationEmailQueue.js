@@ -4,7 +4,10 @@ import { sendEmail } from "../utils/email.js";
 
 // Queue for adding jobs
 export const notificationEmailQueue = new Queue("notification-email", {
-  connection: redisConnection,
+  connection: {
+    ...redisConnection.options, // Spread existing Redis options
+    family: 0, // Ensure dual stack lookup is enabled for BullMQ
+  },
   defaultJobOptions: {
     removeOnComplete: true,
     removeOnFail: 100,
@@ -51,7 +54,10 @@ const worker = new Worker(
     }
   },
   {
-    connection: redisConnection,
+    connection: {
+      ...redisConnection.options, // Spread existing Redis options
+      family: 0, // Ensure dual stack lookup is enabled for worker
+    },
     concurrency: 2, // Limit concurrent processing to 2 at a time
     limiter: {
       max: 2, // Process at most 2 jobs per second
