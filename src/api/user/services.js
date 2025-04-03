@@ -132,7 +132,7 @@ export const deleteUser = async ({ userIds = [] }) => {
 
 export const signIn = async ({ username, password, refreshToken }) => {
   const parsedUsername = username?.toLowerCase().trim();
-  const parsedPassword = password?.trim();
+  const parsedPassword = decodeURIComponent(password?.trim());
 
   if (!parsedUsername || !parsedPassword) {
     throw new HttpError(400, "Username and password are required");
@@ -309,9 +309,11 @@ export const patchUser = async ({
     throw new HttpError(404, "User not found");
   }
 
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   const updatedUser = await prisma.users.update({
     where: { userId },
-    data: { fullName, role, email, password },
+    data: { fullName, role, email, password: hashedPassword },
   });
 
   return updatedUser;
