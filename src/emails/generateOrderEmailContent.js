@@ -18,7 +18,16 @@ const generateOrderEmailContent = ({ orderType, orderId, orderData = {} }) => {
     createdAt = new Date(),
   } = orderData;
 
-  const formattedDate = new Date(createdAt).toLocaleString();
+  const formattedDate = new Intl.DateTimeFormat("en-US", {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true, // 24-hour clock
+    timeZone: "Asia/Kuala_Lumpur", // Malaysia Time Zone
+  }).format(new Date(createdAt));
+
   const formattedAmount = new Intl.NumberFormat("en-MY", {
     style: "currency",
     currency: "MYR",

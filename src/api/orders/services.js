@@ -332,6 +332,7 @@ export const postCreateOrder = async ({
               orderItems: parsedOrderItems,
               salesAgentId,
               salesAgentName: salesAgent.fullName,
+              notes,
             }
           : {
               orderType,

@@ -96,7 +96,9 @@ export const createUser = async ({
   let isUnique = false;
 
   while (!isUnique) {
-    username = `${fullName}_${crypto.randomBytes(5).toString("hex")}`;
+    const base = fullName.replace(/\s+/g, "").toLowerCase();
+    const suffix = crypto.randomBytes(5).toString("hex");
+    username = base + suffix;
     const existingUser = await prisma.users.findUnique({ where: { username } });
     if (!existingUser) isUnique = true;
   }
