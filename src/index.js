@@ -53,11 +53,11 @@ app.use("/notifications", passportAuth, notificationRoutes);
 app.use("/users", userRoutes);
 
 /* SCRIPTS */
-const RUN_QR_SCRIPT = process.env.RUN_QR_SCRIPT === "true";
+// const RUN_QR_SCRIPT = process.env.RUN_QR_SCRIPT === "true";
 
-if (RUN_QR_SCRIPT) {
-  generateQRImages()
-}
+// if (RUN_QR_SCRIPT) {
+//   generateQRImages()
+// }
 
 /* SERVER */
 const port = Number(process.env.PORT) || 3000;
