@@ -9,7 +9,8 @@
     "migrate": "npx prisma migrate deploy",
     "build": "npx prisma generate",
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "generate-qr": "node src/scripts/generateQRImages.js"
   },
   "keywords": [],
   "author": "",
@@ -34,6 +35,8 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "prisma": "^5.20.0",
+    "puppeteer": "^24.12.1",
+    "qrcode": "^1.5.4",
     "resend": "^4.1.2",
     "rimraf": "^6.0.1",
     "socket.io": "^4.8.1"

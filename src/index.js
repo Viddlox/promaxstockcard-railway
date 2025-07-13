@@ -22,6 +22,7 @@ import { customerRoutes } from "./api/customer/routes.js";
 import { userRoutes } from "./api/user/routes.js";
 import { redirectionRoutes } from "./api/redirection/routes.js";
 import { notificationRoutes } from "./api/notifications/routes.js";
+import generateQRImages from "./scripts/generateQRImages.js";
 
 /* CONFIGURATIONS */
 const app = express();
@@ -50,6 +51,13 @@ app.use("/customers", passportAuth, customerRoutes);
 app.use("/redirection", passportAuth, redirectionRoutes);
 app.use("/notifications", passportAuth, notificationRoutes);
 app.use("/users", userRoutes);
+
+/* SCRIPTS */
+const RUN_QR_SCRIPT = process.env.RUN_QR_SCRIPT === "true";
+
+if (RUN_QR_SCRIPT) {
+  generateQRImages()
+}
 
 /* SERVER */
 const port = Number(process.env.PORT) || 3000;
