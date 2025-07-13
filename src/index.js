@@ -22,7 +22,7 @@ import { customerRoutes } from "./api/customer/routes.js";
 import { userRoutes } from "./api/user/routes.js";
 import { redirectionRoutes } from "./api/redirection/routes.js";
 import { notificationRoutes } from "./api/notifications/routes.js";
-import generateQRImages from "./scripts/generateQRImages.js";
+// import generateQRImages from "./scripts/generateQRImages.js";
 
 /* CONFIGURATIONS */
 const app = express();

@@ -9,8 +9,7 @@
     "migrate": "npx prisma migrate deploy",
     "build": "npx prisma generate",
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "generate-qr": "node src/scripts/generateQRImages.js"
+    "dev": "nodemon src/index.js"
   },
   "keywords": [],
   "author": "",
